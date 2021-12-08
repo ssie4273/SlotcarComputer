@@ -1,2 +1,2 @@
 # SlotcarComputer
-Arduino Steuerung einer Slotcar Startampel mit Fehlstartanalzse u.Zeitnahme
+Arduino Steuerung einer Slotcar Startampel mit Fehlstartanalyse u.Zeitnahme
