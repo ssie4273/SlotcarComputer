@@ -73,7 +73,18 @@ float lapTime_B, besteZeit_B;
 int rundenAnzahl = 10;
 int rennDauer = 5; // in Minuten
 // Rennmodus true: Zeitrennen, false: Rundenrennen
-boolean rennModus = true; 
+boolean rennModusZeit = true; 
+
+byte ArrowDown[] = {
+  B00000,
+  B00100,
+  B00100,
+  B00100,
+  B00100,
+  B10101,
+  B01110,
+  B00100
+};
 
 void readoutLanes(){
 	// beide Bahnen auslesen und Differenz speichern
@@ -407,15 +418,49 @@ void raceLoop() {
 }
  
 void loop() {
-  // put your main code here, to run repeatedly:
+	boolean firstPageReady = false;
+	boolean secondPageReady = false;
+  lcd.createChar(0, ArrowDown);
+	// put your main code here, to run repeatedly:
   settingsSwitch=digitalRead(set_race);
 	if (settingsSwitch) {
-		//Serial.println("Settings");
+		// 1. Seite: Zeitrennen oder Rundenrennen
+			lcd.clear();
+			showDisplay(0,0,"Einstellungen:");
+			showDisplay(1,0,"Renntyp:");
+			showDisplay(2,0,"Zeit          Runden");
+			lcd.setCursor(1,3);
+			lcd.write(0); // Pfeil nach unten 
+			lcd.setCursor(18,3);
+			lcd.write(0); // Pfeil nach unten 
+		while (!firstPageReady){
+			if (digitalRead(taste1) == HIGH) {
+				rennModusZeit=true;	// Zeitrennen
+				firstPageReady = true;
+			}
+			if (digitalRead(taste4) == HIGH) {
+				rennModusZeit=false; // Rundenrennen
+				firstPageReady=true;
+			}
+		}
+		// 2. Seite: Anzahl Minuten oder Rundeneinstellen:
+		lcd.clear();
+		showDisplay(0,0,"Einstellungen:");
+		showDisplay(1,0,"Renntyp:");
+		if (rennModusZeit) showDisplay(1,8,"Zeitrennen"); else showDisplay(1,8,"Rundenrennen");
+		
+		while (!secondPageReady) {
+		// Zeit oder Runcenanzahl einstellen:
+			if (digitalRead(taste4) == HIGH){
+				showDisplay(3,17,"OK");
+				secondPageReady = true;
+				delay(5000);
+			}
+		}
 	}
 	else { 
-		//Serial.println("Rennen");
 		offset=0; // LED: normale Startsequenz
-		
+		lcd.clear();	
 		
 		digitalWrite(rel_A, HIGH); 
 		digitalWrite(rel_B, HIGH);
@@ -424,10 +469,5 @@ void loop() {
 		// Anzeige auf Display
 		showDisplay(1,6,"S T A R T");
 		delay(10000);
-		lcd.clear();
-	delay(100);
 	}
 }
- 
-
-
