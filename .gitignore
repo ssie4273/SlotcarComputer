@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# Arduino builds
+build-nano328
+build-mega2560
