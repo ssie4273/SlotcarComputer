@@ -451,12 +451,25 @@ void loop() {
 		
 		while (!secondPageReady) {
 		// Zeit oder Runcenanzahl einstellen:
+			showDisplay(3,17,"OK");
 			if (digitalRead(taste4) == HIGH){
-				showDisplay(3,17,"OK");
 				secondPageReady = true;
 				delay(5000);
 			}
 		}
+		// Alle Settings verfuegbar:
+		lcd.clear();
+		showDisplay(0,0,"eingestellt:");	
+		showDisplay(1,0,"Renntyp:");
+		if (rennModusZeit) {
+			showDisplay(1,8,"Zeitrennen");
+			showDisplay(2,0,"Gesamtzeit:");
+		} 
+		else {
+			showDisplay(1,8,"Rundenrennen");
+			showDisplay(2,0,"Gesamtrunden:");
+		}
+		delay(5000);
 	}
 	else { 
 		offset=0; // LED: normale Startsequenz
