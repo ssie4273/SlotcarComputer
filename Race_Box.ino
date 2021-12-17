@@ -72,6 +72,12 @@ float lapTime_B, besteZeit_B;
 // Rennparameter default:
 int rundenAnzahl = 10;
 int rennDauer = 5; // in Minuten
+const int deltarennDauer = 1; 
+const int deltarundenAnzahl = 5;
+const int maxrennDauer = 15; 
+const int minrennDauer = 2;
+const int maxrundenAnzahl = 100;
+const int minrundenAnzahl = 5;
 // Rennmodus true: Zeitrennen, false: Rundenrennen
 boolean rennModusZeit = true; 
 
@@ -448,13 +454,41 @@ void loop() {
 		showDisplay(0,0,"Einstellungen:");
 		showDisplay(1,0,"Renntyp:");
 		if (rennModusZeit) showDisplay(1,8,"Zeitrennen"); else showDisplay(1,8,"Rundenrennen");
-		
+		delay(300);
 		while (!secondPageReady) {
 		// Zeit oder Runcenanzahl einstellen:
+			if (rennModusZeit) { // Zeitrennen: adjust Parameter
+				showDisplay(3,6,"-");
+				showDisplay(2,0,"                    ");
+				showDisplay(2,9,(String)rennDauer);
+				showDisplay(3,13,"+");
+				if (digitalRead(taste2) == HIGH) {
+					if (rennDauer - deltarennDauer >= minrennDauer) rennDauer = rennDauer - deltarennDauer;
+					delay(5);
+				} 
+				if (digitalRead(taste3) == HIGH) {
+					if (rennDauer + deltarennDauer <= maxrennDauer) rennDauer = rennDauer + deltarennDauer; 
+					delay(5);
+				}
+			} // End Zeitrennen: Adjust Parameter
+			else { // Rundenrennen: adjust Parameter
+				showDisplay(3,6,"-");
+				showDisplay(2,0,"                    ");
+				showDisplay(2,9,(String)rundenAnzahl);
+				showDisplay(3,13,"+");
+				if (digitalRead(taste2) == HIGH) {
+					if (rundenAnzahl - deltarundenAnzahl >= minrundenAnzahl) rundenAnzahl = rundenAnzahl - deltarundenAnzahl;
+					delay(50);
+				} 
+				if (digitalRead(taste3) == HIGH) {
+					if (rundenAnzahl + deltarundenAnzahl <= maxrundenAnzahl) rundenAnzahl = rundenAnzahl + deltarundenAnzahl; 
+					delay(50);
+				}
+			}// End Rundenrennen: adjust Parameter
+			
 			showDisplay(3,17,"OK");
 			if (digitalRead(taste4) == HIGH){
 				secondPageReady = true;
-				delay(5000);
 			}
 		}
 		// Alle Settings verfuegbar:
@@ -464,14 +498,16 @@ void loop() {
 		if (rennModusZeit) {
 			showDisplay(1,8,"Zeitrennen");
 			showDisplay(2,0,"Gesamtzeit:");
+			showDisplay(2,11,(String)rennDauer);
 		} 
 		else {
 			showDisplay(1,8,"Rundenrennen");
 			showDisplay(2,0,"Gesamtrunden:");
+			showDisplay(2,13,(String)rundenAnzahl);
 		}
 		delay(5000);
 	}
-	else { 
+	else { // Switch steht auf "Rennen" 
 		offset=0; // LED: normale Startsequenz
 		lcd.clear();	
 		
