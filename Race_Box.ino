@@ -422,12 +422,12 @@ void raceLoop() {
   analog_B = analogRead(IR_B);
 
 }
- 
-void loop() {
+
+
+void settings(){
 	boolean firstPageReady = false;
 	boolean secondPageReady = false;
   lcd.createChar(0, ArrowDown);
-	// put your main code here, to run repeatedly:
   settingsSwitch=digitalRead(set_race);
 	if (settingsSwitch) {
 		// 1. Seite: Zeitrennen oder Rundenrennen
@@ -454,7 +454,7 @@ void loop() {
 		showDisplay(0,0,"Einstellungen:");
 		showDisplay(1,0,"Renntyp:");
 		if (rennModusZeit) showDisplay(1,8,"Zeitrennen"); else showDisplay(1,8,"Rundenrennen");
-		delay(300);
+		delay(10);
 		while (!secondPageReady) {
 		// Zeit oder Runcenanzahl einstellen:
 			if (rennModusZeit) { // Zeitrennen: adjust Parameter
@@ -493,30 +493,53 @@ void loop() {
 		}
 		// Alle Settings verfuegbar:
 		lcd.clear();
-		showDisplay(0,0,"eingestellt:");	
-		showDisplay(1,0,"Renntyp:");
+		showDisplay(0,0,"Renntyp:");
 		if (rennModusZeit) {
-			showDisplay(1,8,"Zeitrennen");
-			showDisplay(2,0,"Gesamtzeit:");
-			showDisplay(2,11,(String)rennDauer);
+			showDisplay(0,8,"Zeitrennen");
+			showDisplay(1,0,"Gesamtzeit:");
+			showDisplay(1,11,(String)rennDauer);
 		} 
 		else {
-			showDisplay(1,8,"Rundenrennen");
-			showDisplay(2,0,"Gesamtrunden:");
-			showDisplay(2,13,(String)rundenAnzahl);
+			showDisplay(0,8,"Rundenrennen");
+			showDisplay(1,0,"Gesamtrunden:");
+			showDisplay(1,13,(String)rundenAnzahl);
 		}
-		delay(5000);
+		showDisplay(2,1,"neu");
+		lcd.setCursor(3,1);
+		lcd.write(0); // Pfeil nach unten 
+		while (secondPageReady){
+			if (digitalRead(taste1)) {
+				firstPageReady = false;	
+				secondPageReady = false;	
+			}
+		} 	
+	}
+}
+ 
+void loop() {
+	// put your main code here, to run repeatedly:
+  settingsSwitch=digitalRead(set_race);
+	if (settingsSwitch) {
+		settings();
 	}
 	else { // Switch steht auf "Rennen" 
 		offset=0; // LED: normale Startsequenz
 		lcd.clear();	
-		
+		if (rennModusZeit) {
+			showDisplay(0,0,"Zeitrennen");
+			showDisplay(0,11,(String)rennDauer);
+			showDisplay(0,13,"Min.");
+		} else {
+			showDisplay(0,0,"Rundenrennen");
+			showDisplay(0,13,(String)rundenAnzahl);
+			showDisplay(0,16,"R.");
+		}
 		digitalWrite(rel_A, HIGH); 
 		digitalWrite(rel_B, HIGH);
 		startingSignal(); 	
-		
 		// Anzeige auf Display
-		showDisplay(1,6,"S T A R T");
+		showDisplay(2,6,"S T A R T");
+		
 		delay(10000);
 	}
 }
