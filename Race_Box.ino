@@ -320,11 +320,6 @@ void setup() {
   digitalWrite(rel_B, HIGH);
 }
 
-void defineSettings() {
-// Einstellungen aendern
-
-}
-
 
 void raceLoop() {
   // aktives Rennen
@@ -423,13 +418,12 @@ void raceLoop() {
 
 }
 
-
-void settings(){
+void defineSettings(){
 	boolean firstPageReady = false;
 	boolean secondPageReady = false;
   lcd.createChar(0, ArrowDown);
   settingsSwitch=digitalRead(set_race);
-	if (settingsSwitch) {
+	while (settingsSwitch) {
 		// 1. Seite: Zeitrennen oder Rundenrennen
 			lcd.clear();
 			showDisplay(0,0,"Einstellungen:");
@@ -505,13 +499,14 @@ void settings(){
 			showDisplay(1,13,(String)rundenAnzahl);
 		}
 		showDisplay(2,1,"neu");
-		lcd.setCursor(3,1);
+		lcd.setCursor(1,3);
 		lcd.write(0); // Pfeil nach unten 
-		while (secondPageReady){
+		while (secondPageReady && settingsSwitch){ // alles Settings gesetzt und Schalter noch auf Settings
 			if (digitalRead(taste1)) {
 				firstPageReady = false;	
 				secondPageReady = false;	
 			}
+		settingsSwitch=digitalRead(set_race); // Schalter noch auf Settings?
 		} 	
 	}
 }
@@ -520,7 +515,7 @@ void loop() {
 	// put your main code here, to run repeatedly:
   settingsSwitch=digitalRead(set_race);
 	if (settingsSwitch) {
-		settings();
+		defineSettings();
 	}
 	else { // Switch steht auf "Rennen" 
 		offset=0; // LED: normale Startsequenz

@@ -37,3 +37,6 @@
 # Arduino builds
 build-nano328
 build-mega2560
+ 
+# metadata
+.metadata
