@@ -513,8 +513,6 @@ void defineSettings(){
 			if (btn1.rose()) {
 				firstPageReady = false;	
 				secondPageReady = false;	
-				Serial.println("--> neu. Settings von vorn.");
-				Serial.println(rennModusZeit);
 			}
 		settingsSwitch=digitalRead(set_race); // Schalter noch auf Settings?
 		} 	
