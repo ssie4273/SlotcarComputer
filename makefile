@@ -31,7 +31,7 @@
 #
 # For example:
 #
-       ARDUINO_LIBS = LiquidCrystal_I2C Wire 
+       ARDUINO_LIBS = LiquidCrystal_I2C Wire Bounce2 
        BOARD_TAG    = nano328
        MONITOR_PORT = /dev/ttyUSB*
 #

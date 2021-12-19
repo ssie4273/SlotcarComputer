@@ -6,6 +6,7 @@
 
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <Bounce2.h>
 
 // I2C Display
 // I2C Adresse: 0x27
@@ -28,6 +29,11 @@ const int taste1=3;
 const int taste2=4;
 const int taste3=5;
 const int taste4=6;
+// Entprellen:
+Bounce btn1 = Bounce(taste1,30);
+Bounce btn2 = Bounce(taste2,30);
+Bounce btn3 = Bounce(taste3,30);
+Bounce btn4 = Bounce(taste4,30);
 const int set_race=7;
 const int rel_A=8;
 const int rel_B=9;
@@ -310,7 +316,7 @@ void setup() {
   pinMode(taste1,INPUT);
   pinMode(taste2,INPUT);
   pinMode(taste3,INPUT);
-  pinMode(taste4,INPUT);
+  pinMode(taste3,INPUT);
   pinMode(set_race,INPUT);
   pinMode(rel_A,OUTPUT);
   pinMode(rel_B,OUTPUT);
@@ -425,20 +431,22 @@ void defineSettings(){
   settingsSwitch=digitalRead(set_race);
 	while (settingsSwitch) {
 		// 1. Seite: Zeitrennen oder Rundenrennen
-			lcd.clear();
-			showDisplay(0,0,"Einstellungen:");
-			showDisplay(1,0,"Renntyp:");
-			showDisplay(2,0,"Zeit          Runden");
-			lcd.setCursor(1,3);
-			lcd.write(0); // Pfeil nach unten 
-			lcd.setCursor(18,3);
-			lcd.write(0); // Pfeil nach unten 
+		lcd.clear();
+		showDisplay(0,0,"Einstellungen:");
+		showDisplay(1,0,"Renntyp:");
+		showDisplay(2,0,"Zeit          Runden");
+		lcd.setCursor(1,3);
+		lcd.write(0); // Pfeil nach unten 
+		lcd.setCursor(18,3);
+		lcd.write(0); // Pfeil nach unten 
 		while (!firstPageReady){
-			if (digitalRead(taste1) == HIGH) {
+			btn1.update();
+			btn4.update();
+			if (btn1.fell()) {
 				rennModusZeit=true;	// Zeitrennen
 				firstPageReady = true;
 			}
-			if (digitalRead(taste4) == HIGH) {
+			if (btn4.fell()) {
 				rennModusZeit=false; // Rundenrennen
 				firstPageReady=true;
 			}
@@ -451,16 +459,19 @@ void defineSettings(){
 		delay(10);
 		while (!secondPageReady) {
 		// Zeit oder Runcenanzahl einstellen:
+			btn2.update();
+			btn3.update();
+			btn4.update();
 			if (rennModusZeit) { // Zeitrennen: adjust Parameter
 				showDisplay(3,6,"-");
 				showDisplay(2,0,"                    ");
 				showDisplay(2,9,(String)rennDauer);
 				showDisplay(3,13,"+");
-				if (digitalRead(taste2) == HIGH) {
+				if (btn2.fell()) {
 					if (rennDauer - deltarennDauer >= minrennDauer) rennDauer = rennDauer - deltarennDauer;
 					delay(5);
 				} 
-				if (digitalRead(taste3) == HIGH) {
+				if (btn3.fell()) {
 					if (rennDauer + deltarennDauer <= maxrennDauer) rennDauer = rennDauer + deltarennDauer; 
 					delay(5);
 				}
@@ -470,18 +481,18 @@ void defineSettings(){
 				showDisplay(2,0,"                    ");
 				showDisplay(2,9,(String)rundenAnzahl);
 				showDisplay(3,13,"+");
-				if (digitalRead(taste2) == HIGH) {
+				if (btn2.fell()) {
 					if (rundenAnzahl - deltarundenAnzahl >= minrundenAnzahl) rundenAnzahl = rundenAnzahl - deltarundenAnzahl;
 					delay(50);
 				} 
-				if (digitalRead(taste3) == HIGH) {
+				if (btn3.fell()) {
 					if (rundenAnzahl + deltarundenAnzahl <= maxrundenAnzahl) rundenAnzahl = rundenAnzahl + deltarundenAnzahl; 
 					delay(50);
 				}
 			}// End Rundenrennen: adjust Parameter
 			
 			showDisplay(3,17,"OK");
-			if (digitalRead(taste4) == HIGH){
+			if (btn4.fell()){
 				secondPageReady = true;
 			}
 		}
@@ -502,9 +513,12 @@ void defineSettings(){
 		lcd.setCursor(1,3);
 		lcd.write(0); // Pfeil nach unten 
 		while (secondPageReady && settingsSwitch){ // alles Settings gesetzt und Schalter noch auf Settings
-			if (digitalRead(taste1)) {
+			btn1.update();
+			if (btn1.fell()) {
 				firstPageReady = false;	
 				secondPageReady = false;	
+				Serial.println("--> neu. Settings von vorn.");
+				Serial.println(rennModusZeit);
 			}
 		settingsSwitch=digitalRead(set_race); // Schalter noch auf Settings?
 		} 	
