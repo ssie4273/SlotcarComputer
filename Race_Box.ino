@@ -316,7 +316,7 @@ void setup() {
   pinMode(taste1,INPUT);
   pinMode(taste2,INPUT);
   pinMode(taste3,INPUT);
-  pinMode(taste3,INPUT);
+  pinMode(taste4,INPUT);
   pinMode(set_race,INPUT);
   pinMode(rel_A,OUTPUT);
   pinMode(rel_B,OUTPUT);
