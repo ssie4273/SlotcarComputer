@@ -2,7 +2,7 @@
 // $Author: stefan $
 // $Date: 2021-12-05 21:45:05 +0100 (Sun, 05 Dec 2021) $
 // $Header: file:///home/stefan/Documents/Carrera/repository/Race_Box/Race_Box.ino 14 2021-12-05 20:45:05Z stefan $
-
+#define BOUNCE_WITH_PROMPT_DETECTION
 
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
@@ -442,11 +442,11 @@ void defineSettings(){
 		while (!firstPageReady){
 			btn1.update();
 			btn4.update();
-			if (btn1.fell()) {
+			if (btn1.rose()) {
 				rennModusZeit=true;	// Zeitrennen
 				firstPageReady = true;
 			}
-			if (btn4.fell()) {
+			if (btn4.rose()) {
 				rennModusZeit=false; // Rundenrennen
 				firstPageReady=true;
 			}
@@ -467,13 +467,11 @@ void defineSettings(){
 				showDisplay(2,0,"                    ");
 				showDisplay(2,9,(String)rennDauer);
 				showDisplay(3,13,"+");
-				if (btn2.fell()) {
+				if (btn2.rose()) {
 					if (rennDauer - deltarennDauer >= minrennDauer) rennDauer = rennDauer - deltarennDauer;
-					delay(5);
 				} 
-				if (btn3.fell()) {
+				if (btn3.rose()) {
 					if (rennDauer + deltarennDauer <= maxrennDauer) rennDauer = rennDauer + deltarennDauer; 
-					delay(5);
 				}
 			} // End Zeitrennen: Adjust Parameter
 			else { // Rundenrennen: adjust Parameter
@@ -481,18 +479,16 @@ void defineSettings(){
 				showDisplay(2,0,"                    ");
 				showDisplay(2,9,(String)rundenAnzahl);
 				showDisplay(3,13,"+");
-				if (btn2.fell()) {
+				if (btn2.rose()) {
 					if (rundenAnzahl - deltarundenAnzahl >= minrundenAnzahl) rundenAnzahl = rundenAnzahl - deltarundenAnzahl;
-					delay(50);
 				} 
-				if (btn3.fell()) {
+				if (btn3.rose()) {
 					if (rundenAnzahl + deltarundenAnzahl <= maxrundenAnzahl) rundenAnzahl = rundenAnzahl + deltarundenAnzahl; 
-					delay(50);
 				}
 			}// End Rundenrennen: adjust Parameter
 			
 			showDisplay(3,17,"OK");
-			if (btn4.fell()){
+			if (btn4.rose()){
 				secondPageReady = true;
 			}
 		}
@@ -514,7 +510,7 @@ void defineSettings(){
 		lcd.write(0); // Pfeil nach unten 
 		while (secondPageReady && settingsSwitch){ // alles Settings gesetzt und Schalter noch auf Settings
 			btn1.update();
-			if (btn1.fell()) {
+			if (btn1.rose()) {
 				firstPageReady = false;	
 				secondPageReady = false;	
 				Serial.println("--> neu. Settings von vorn.");
