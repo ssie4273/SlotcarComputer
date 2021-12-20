@@ -341,8 +341,8 @@ void raceLoop() {
 
   
   if (diff_A > schwellwert) {
-    // Auto1 durchfährt Lichtschranke
-    Serial.print("Lichtschranke Bahn1 (blau) mit Runde: ");
+    // AutoA durchfährt Lichtschranke
+    Serial.print("Lichtschranke BahnA mit Runde: ");
     Serial.println(runde_A);
 
     if (n_A == IR_off_cycle) {
@@ -365,7 +365,7 @@ void raceLoop() {
 //                Serial.println(besteZeit_A,3);
 //                Serial.println();
 //                Serial.println();
-//        anzeige(0, 'A', (String)runde_A, String(lapTime_A, 3), "");
+        //anzeige(0, 'A', (String)runde_A, String(lapTime_A, 3), "");
       }
       runde_A++;
       n_A--;
@@ -375,7 +375,7 @@ void raceLoop() {
   }
   if (diff_B > schwellwert) {
     // Auto2 durchfährt Lichtschranke
-    Serial.print("Lichtschranke Bahn2 (gruen) mit Runde: ");
+    Serial.print("Lichtschranke BahnB mit Runde: ");
     Serial.println(runde_B);
       
     if (n_B == IR_off_cycle) {
@@ -417,11 +417,6 @@ void raceLoop() {
   
   // IR Sensoren erneut auslesen.
   delay(IR_sensor_speed);
- 
-  // IR Schranken einlesen:
-  analog_A = analogRead(IR_A);
-  analog_B = analogRead(IR_B);
-
 }
 
 void defineSettings(){
