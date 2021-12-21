@@ -101,17 +101,16 @@ byte ArrowDown[] = {
 
 void readoutLanes(){
 	// beide Bahnen auslesen und Differenz speichern
-  int delta_A, delta_B;
 	analog_A = analogRead(IR_A);
   analog_B = analogRead(IR_B);
   // Debugging:
   //  Serial.print(analog_A); Serial.print(" ("); Serial.print(vorigeMessung_A);Serial.print(")");
   //  Serial.print("    ");
   //  Serial.print(analog_B); Serial.print(" ("); Serial.print(vorigeMessung_B);Serial.println(")");
-  delta_A = abs(analog_A - vorigeMessung_A);
-  delta_B = abs(analog_B - vorigeMessung_B);
-	if (delta_A < schwellwert_A) A_crossingIR = false; else A_crossingIR = true; // false setzt es auf jeden FAll zurueck
-  if (delta_B < schwellwert_B) B_crossingIR = false; else B_crossingIR = true;
+  diff_A = abs(analog_A - vorigeMessung_A);
+  diff_B = abs(analog_B - vorigeMessung_B);
+	if (diff_A < schwellwert_A) A_crossingIR = false; else A_crossingIR = true; // false setzt es auf jeden FAll zurueck
+  if (diff_B < schwellwert_B) B_crossingIR = false; else B_crossingIR = true;
   vorigeMessung_A = analog_A;
   vorigeMessung_B = analog_B;
 }
