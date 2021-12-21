@@ -537,9 +537,12 @@ void loop() {
 		digitalWrite(rel_B, HIGH);
 		//startingSignal(); 	
 		// Anzeige auf Display
+		readoutLanes();
 		showDisplay(1,0,"*** Testmode ***");
-		showDisplay(2,0,(String)diff_A);
-		showDisplay(2,10,(String)diff_B);
+		showDisplay(2,0,(String)analog_A);
+		showDisplay(3,0,(String)diff_A);
+		showDisplay(2,10,(String)analog_B);
+		showDisplay(3,10,(String)diff_B);
 		
 		delay(100);
 	}
