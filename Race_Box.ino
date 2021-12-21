@@ -535,10 +535,12 @@ void loop() {
 		}
 		digitalWrite(rel_A, HIGH); 
 		digitalWrite(rel_B, HIGH);
-		startingSignal(); 	
+		//startingSignal(); 	
 		// Anzeige auf Display
-		showDisplay(2,6,"S T A R T");
+		showDisplay(1,0,"*** Testmode ***");
+		showDisplay(2,0,(String)delta_A);
+		showDisplay(2,10,(String)delta_B);
 		
-		delay(10000);
+		delay(10);
 	}
 }
