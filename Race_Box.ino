@@ -47,7 +47,8 @@ const int IR_B = 0; // Bahn B
 boolean settingsSwitch = false;
 
 // Parameter evtl. anpasssen:
-const int schwellwert = 15; // IR Empfindlichkeit
+const int schwellwert_A = 15; // IR Empfindlichkeit Bahn A
+const int schwellwert_B = 15; // IR Empfindlichkeit Bahn B
 const int IR_sensor_speed = 10; // IR Brücke wird alle IR_sensor_speed ms ausgelesen
 const int IR_off_cycle = 350; // IR Brücke wird für IR_out_cycle * IR_sensor_speed nicht ausgelesen: nur Spitze des Fahrzeugs wird gewertet.
 const int gesamt = 1000;
@@ -109,8 +110,8 @@ void readoutLanes(){
   //  Serial.print(analog_B); Serial.print(" ("); Serial.print(vorigeMessung_B);Serial.println(")");
   delta_A = abs(analog_A - vorigeMessung_A);
   delta_B = abs(analog_B - vorigeMessung_B);
-  if (delta_A < schwellwert) A_crossingIR = false; else A_crossingIR = true;
-  if (delta_B < schwellwert) B_crossingIR = false; else B_crossingIR = true;
+	if (delta_A < schwellwert_A) A_crossingIR = false; else A_crossingIR = true; // false setzt es auf jeden FAll zurueck
+  if (delta_B < schwellwert_B) B_crossingIR = false; else B_crossingIR = true;
   vorigeMessung_A = analog_A;
   vorigeMessung_B = analog_B;
 }
@@ -340,7 +341,7 @@ void raceLoop() {
   diff_B = abs(analog_B - vorigeMessung_B);
 
   
-  if (diff_A > schwellwert) {
+  if (diff_A > schwellwert_A) {
     // AutoA durchfährt Lichtschranke
     Serial.print("Lichtschranke BahnA mit Runde: ");
     Serial.println(runde_A);
@@ -373,7 +374,7 @@ void raceLoop() {
       startTime_A = myTime_A;
     }
   }
-  if (diff_B > schwellwert) {
+  if (diff_B > schwellwert_B) {
     // Auto2 durchfährt Lichtschranke
     Serial.print("Lichtschranke BahnB mit Runde: ");
     Serial.println(runde_B);
