@@ -47,8 +47,8 @@ const int IR_B = 0; // Bahn B
 boolean settingsSwitch = false;
 
 // Parameter evtl. anpasssen:
-const int schwellwert_A = 15; // IR Empfindlichkeit Bahn A
-const int schwellwert_B = 15; // IR Empfindlichkeit Bahn B
+const int schwellwert_A = 20; // IR Empfindlichkeit Bahn A
+const int schwellwert_B = 50; // IR Empfindlichkeit Bahn B
 const int IR_sensor_speed = 10; // IR Brücke wird alle IR_sensor_speed ms ausgelesen
 const int IR_off_cycle = 350; // IR Brücke wird für IR_out_cycle * IR_sensor_speed nicht ausgelesen: nur Spitze des Fahrzeugs wird gewertet.
 const int gesamt = 1000;
@@ -59,6 +59,8 @@ const int tone_long = 300;
 int analog_A; // ausgelesener Wert Lichtschranke Bahn1
 int analog_B; // ausgelesener Wert Lichtschranke Bahn2
 int vorigeMessung_A, vorigeMessung_B, diff_A, diff_B;
+int diffMax_A = 0;
+int diffMax_B = 0;
 int n_A = IR_off_cycle;
 int n_B = IR_off_cycle;
 boolean A_crossingIR, B_crossingIR;
@@ -100,7 +102,6 @@ byte ArrowDown[] = {
 };
 
 void readoutLanes(){
-	int delta_A,delta_B;
 	// beide Bahnen auslesen und Differenz speichern
 	analog_A = analogRead(IR_A);
   analog_B = analogRead(IR_B);
@@ -325,6 +326,8 @@ void setup() {
   // set Bahnrelais to HIGH (Fahrstrom ein, Kontroll LED auf Modul sind aus):
   digitalWrite(rel_A, HIGH);
   digitalWrite(rel_B, HIGH);
+	// dummy readoutLanes():
+	readoutLanes();
 }
 
 
@@ -517,7 +520,7 @@ void defineSettings(){
  
 void loop() {
 	// put your main code here, to run repeatedly:
-  settingsSwitch=digitalRead(set_race);
+	settingsSwitch=digitalRead(set_race);
 	if (settingsSwitch) {
 		defineSettings();
 	}
@@ -538,12 +541,21 @@ void loop() {
 		//startingSignal(); 	
 		// Anzeige auf Display
 		readoutLanes();
-		showDisplay(1,0,"*** Testmode ***");
-		showDisplay(2,0,(String)analog_A);
-		showDisplay(3,0,(String)diff_A);
-		showDisplay(2,10,(String)analog_B);
-		showDisplay(3,10,(String)diff_B);
-		
+		if (diff_A > diffMax_A) diffMax_A = diff_A;
+		if (diff_B > diffMax_B) diffMax_B = diff_B;
+		showDisplay(3,0,"                    ");
+		showDisplay(0,0,"*** Testmode ***");
+		showDisplay(1,0,(String)analog_A);
+		showDisplay(2,0,(String)diff_A);
+		showDisplay(3,0,(String)diffMax_A);
+		showDisplay(1,10,(String)analog_B);
+		showDisplay(2,10,(String)diff_B);
+		showDisplay(3,10,(String)diffMax_B);
+		btn4.update();
+		if (btn4.rose()) {
+			diffMax_A = 0;
+			diffMax_B = 0;
+		}	
 		delay(100);
 	}
 }
