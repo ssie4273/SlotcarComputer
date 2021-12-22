@@ -49,7 +49,7 @@ boolean settingsSwitch = false;
 // Parameter evtl. anpasssen:
 const int schwellwert_A = 20; // IR Empfindlichkeit Bahn A
 const int schwellwert_B = 50; // IR Empfindlichkeit Bahn B
-const int IR_sensor_speed = 10; // IR Brücke wird alle IR_sensor_speed ms ausgelesen
+const int IR_sensor_speed = 5; // IR Brücke wird alle IR_sensor_speed ms ausgelesen
 const int IR_off_cycle = 350; // IR Brücke wird für IR_out_cycle * IR_sensor_speed nicht ausgelesen: nur Spitze des Fahrzeugs wird gewertet.
 const int gesamt = 1000;
 const int tone_short = 50;
@@ -105,6 +105,9 @@ void readoutLanes(){
 	// beide Bahnen auslesen und Differenz speichern
 	analog_A = analogRead(IR_A);
   analog_B = analogRead(IR_B);
+	const int sensorMax_A = 150;
+	analog_A = constrain(analog_A, 0,sensorMax_A);
+	analog_A = map(analog_A,0,sensorMax_A,0,255);
   // Debugging:
   //  Serial.print(analog_A); Serial.print(" ("); Serial.print(vorigeMessung_A);Serial.print(")");
   //  Serial.print("    ");
@@ -541,8 +544,15 @@ void loop() {
 		//startingSignal(); 	
 		// Anzeige auf Display
 		readoutLanes();
-		if (diff_A > diffMax_A) diffMax_A = diff_A;
-		if (diff_B > diffMax_B) diffMax_B = diff_B;
+		if (diff_A > diffMax_A) {
+			diffMax_A = diff_A;
+			Serial.print("diffMax_A: "); Serial.println(diffMax_A);
+		};
+		if (diff_B > diffMax_B) {
+			diffMax_B = diff_B;
+			diffMax_A = diff_B;
+			Serial.print("diffMax_B: "); Serial.println(diffMax_B);
+		};
 		showDisplay(3,0,"                    ");
 		showDisplay(0,0,"*** Testmode ***");
 		showDisplay(1,0,(String)analog_A);
@@ -556,6 +566,6 @@ void loop() {
 			diffMax_A = 0;
 			diffMax_B = 0;
 		}	
-		delay(100);
+		delay(IR_sensor_speed);
 	}
 }
