@@ -49,7 +49,11 @@ boolean settingsSwitch = false;
 // Parameter evtl. anpasssen:
 const int schwellwert_A = 20; // IR Empfindlichkeit Bahn A
 const int schwellwert_B = 50; // IR Empfindlichkeit Bahn B
+<<<<<<< Updated upstream
 const int IR_sensor_speed = 5; // IR Brücke wird alle IR_sensor_speed ms ausgelesen
+=======
+const int IR_sensor_speed = 10; // IR Brücke wird alle IR_sensor_speed ms ausgelesen
+>>>>>>> Stashed changes
 const int IR_off_cycle = 350; // IR Brücke wird für IR_out_cycle * IR_sensor_speed nicht ausgelesen: nur Spitze des Fahrzeugs wird gewertet.
 const int gesamt = 1000;
 const int tone_short = 50;
@@ -58,12 +62,14 @@ const int tone_long = 300;
 // nicht anpassen:
 int analog_A; // ausgelesener Wert Lichtschranke Bahn1
 int analog_B; // ausgelesener Wert Lichtschranke Bahn2
+int diffMax_A = 0; 
+int diffMax_B = 0;
 int vorigeMessung_A, vorigeMessung_B, diff_A, diff_B;
 int diffMax_A = 0;
 int diffMax_B = 0;
 int n_A = IR_off_cycle;
 int n_B = IR_off_cycle;
-boolean A_crossingIR, B_crossingIR;
+boolean crossingIR_A, crossingIR_B; // Flags f. Fehlstart
 int offset = 0; // offset 6,12 fuer Bahn A fehlstart oder Bahn B Fehlstart
 
 // Parameter f. Zeitmessung:
@@ -114,8 +120,8 @@ void readoutLanes(){
   //  Serial.print(analog_B); Serial.print(" ("); Serial.print(vorigeMessung_B);Serial.println(")");
   diff_A = abs(analog_A - vorigeMessung_A);
   diff_B = abs(analog_B - vorigeMessung_B);
-	if (diff_A < schwellwert_A) A_crossingIR = false; else A_crossingIR = true; // false setzt es auf jeden FAll zurueck
-  if (diff_B < schwellwert_B) B_crossingIR = false; else B_crossingIR = true;
+	if (diff_A < schwellwert_A) crossingIR_A = false; else crossingIR_A = true; // false setzt es auf jeden FAll zurueck
+  if (diff_B < schwellwert_B) crossingIR_B = false; else crossingIR_B = true;
   vorigeMessung_A = analog_A;
   vorigeMessung_B = analog_B;
 }
@@ -151,7 +157,7 @@ void startTone(int toneheigth, unsigned long intervalTone, int versatz, uint8_t 
 	const long intervalIr = (long) IR_sensor_speed; // aus Variablen Definition 
 
 	readoutLanes();
-	boolean buzzerOn = false;
+//	boolean buzzerOn = false;
 	boolean buzzerHasPlayed = true;
 	boolean loopActive = true;
 
@@ -188,7 +194,7 @@ void startTone(int toneheigth, unsigned long intervalTone, int versatz, uint8_t 
 		if (currentMillisTone - previousMillisTone >= intervalTone){
 			previousMillisTone = currentMillisTone;
 			noTone(buzzer);
-			buzzerOn = false;
+//			buzzerOn = false;
 			//Serial.println("Ton aus: intervalTone abgelaufen");
 		} 
 			
@@ -197,12 +203,12 @@ void startTone(int toneheigth, unsigned long intervalTone, int versatz, uint8_t 
 		if (currentMillisIr - previousMillisIr >= intervalIr){
 			previousMillisIr = currentMillisIr;
 			readoutLanes();
-			if (A_crossingIR) {
+			if (crossingIR_A) {
 				if (versatz <= 6) versatz = 6; // linke rote LED an
 					else versatz = 18; // beide Aussen LED  --> rot
 				digitalWrite(rel_A, LOW); // Relais Bahn A abschalten
 			} 	
-			if (B_crossingIR) {
+			if (crossingIR_B) {
 				if (versatz == 0) versatz = 12; // beide Aussen LED -->rot 
 						else if (versatz == 6) versatz = 18;//rechte rote LED an
 				digitalWrite(rel_B, LOW); // Relais Bahn A abschalten
@@ -229,11 +235,6 @@ void startTone(int toneheigth, unsigned long intervalTone, int versatz, uint8_t 
 		previousMillisTone=millis();
 	} // end while. solange wie intervalLoop 
 	offset = versatz;
-
-// alt:
-//	delay(tonelength);
-//	noTone(buzzer);
-//	delay(gesamt-tonelength);
 } 
 	
 void startingSignal(){
@@ -299,11 +300,11 @@ void setup() {
   lcd.backlight();
  
   // put your setup code here, to run once:
-  int i, sum1, sum2;
+  int sum1, sum2;
   for (int i = 1; i <= 20; i++) {
     sum1 = sum1 + analogRead(IR_A);
     sum2 = sum2 + analogRead(IR_B);
-    delay(50);
+    delay(20);
   }
   vorigeMessung_A = sum1 / 20;
   vorigeMessung_B = sum2 / 20;
@@ -372,7 +373,10 @@ void raceLoop() {
 //                Serial.println(besteZeit_A,3);
 //                Serial.println();
 //                Serial.println();
-        //anzeige(0, 'A', (String)runde_A, String(lapTime_A, 3), "");
+				String text;
+				text = (String)(lapTime_A, 3);
+				showDisplay(1,10,text);
+				Serial.print("lapTime: ");Serial.print(text);
       }
       runde_A++;
       n_A--;
@@ -405,7 +409,7 @@ void raceLoop() {
 //                Serial.println(besteZeit_B,3);
 //                Serial.println();
 //                Serial.println();
-//        anzeige(1, 'B', (String)runde_B, String(lapTime_B, 3), "");
+        //anzeige(1, 'B', (String)runde_B, String(lapTime_B, 3), "");  <-- ersetzen durch showDisplay
       }
       runde_B++;
       n_B--;
@@ -541,7 +545,16 @@ void loop() {
 		}
 		digitalWrite(rel_A, HIGH); 
 		digitalWrite(rel_B, HIGH);
+<<<<<<< Updated upstream
 		//startingSignal(); 	
+=======
+		startingSignal(); 	
+		String stringOne = "Hallo";
+		showDisplay(3,0,stringOne);
+		Serial.println(1.2345, 3);
+		btn4.update();
+		while (!btn4.rose()) raceLoop(); // noch aendern!
+>>>>>>> Stashed changes
 		// Anzeige auf Display
 		readoutLanes();
 		if (diff_A > diffMax_A) {
