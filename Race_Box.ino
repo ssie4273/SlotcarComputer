@@ -524,7 +524,6 @@ void loop() {
 		digitalWrite(rel_B, HIGH);
 		//startingSignal(); 	
 		// Anzeige auf Display
-//		readoutLanes();
 		while (true) raceLoop(); // fehlen noch Abbruchbedingen. 
 	} // Ende von else Rennen
 }
