@@ -69,7 +69,11 @@ int diffMax_A = 0;
 int diffMax_B = 0;
 int n_A = IR_off_cycle;
 int n_B = IR_off_cycle;
+<<<<<<< Updated upstream
 boolean crossingIR_A, crossingIR_B; // Flags f. Fehlstart
+=======
+boolean crossingIR_A, crossingIR_B;
+>>>>>>> Stashed changes
 int offset = 0; // offset 6,12 fuer Bahn A fehlstart oder Bahn B Fehlstart
 
 // Parameter f. Zeitmessung:
