@@ -353,7 +353,7 @@ void raceLoop() {
 	readoutLanes(); // IR Bruecken lesen
   if (crossingIR_A) {
     //Auto A durchfährt Lichtschranke
-    if (n_A == IR_off_cycle) {
+    if (n_A == IR_off_cycle) { // nur beim allererstem Signal triggern, danach stummschalten fuer IR_offcycle*IR_sensor_speed
       myTime_A = millis();
       lapTime_A = float(myTime_A - startTime_A) / 1000;
       if (lapTime_A < besteZeit_A && runde_A > 0) {
@@ -361,10 +361,20 @@ void raceLoop() {
         besteRunde_A = runde_A;
       }
       if (runde_A > 0) {
-				Serial.print("A: "); Serial.print("Runde: ");Serial.print(runde_A);Serial.print("  Zeit: ");Serial.println(lapTime_A,3);
-				Serial.print("A:  best: ");Serial.print(besteRunde_A);Serial.print("  Zeit: ");Serial.println(besteZeit_A,3);
-				Serial.println();
-				// Anzeige auf Display fehlt noch
+				//Serial.print("A: "); Serial.print("Runde: ");Serial.print(runde_A);Serial.print("  Zeit: ");Serial.println(lapTime_A,3);
+				//Serial.print("A:  best: ");Serial.print(besteRunde_A);Serial.print("  Zeit: ");Serial.println(besteZeit_A,3);
+				//Serial.println();
+				showDisplay(1,0,"          ");
+				showDisplay(1,0,(String)runde_A);
+				double t = (double)lapTime_A;
+				lcd.setCursor(4,1);
+				lcd.print(t,2);
+				showDisplay(2,0,"--- beste Runde: ---");
+				showDisplay(3,0,"          ");
+				showDisplay(3,0,(String)besteRunde_A);
+				t = (double)besteZeit_A;
+				lcd.setCursor(4,3);
+				lcd.print(t,2);
       }
       runde_A++;
       n_A--;
@@ -374,7 +384,7 @@ void raceLoop() {
   }
   if (crossingIR_B) {
     // Auto B durchfährt Lichtschranke
-    if (n_B == IR_off_cycle) {
+    if (n_B == IR_off_cycle) { // nur beim allererstem Signal triggern, danach stummschalten fuer IR_offcycle*IR_sensor_speed
       myTime_B = millis();
       lapTime_B = float(myTime_B - startTime_B) / 1000;
       if (lapTime_B < besteZeit_B && runde_B > 0) {
@@ -382,17 +392,27 @@ void raceLoop() {
         besteRunde_B = runde_B;
       }
       if (runde_B > 0) {
-				Serial.print("B: "); Serial.print("Runde: ");Serial.print(runde_B);Serial.print("  Zeit: ");Serial.println(lapTime_B,3);
-				Serial.print("B:  best: ");Serial.print(besteRunde_B);Serial.print("  Zeit: ");Serial.println(besteZeit_B,3);
-				Serial.println();
-				// Anzeige auf Display fehlt noch
+				//Serial.print("B: "); Serial.print("Runde: ");Serial.print(runde_B);Serial.print("  Zeit: ");Serial.println(lapTime_B,3);
+				//Serial.print("B:  best: ");Serial.print(besteRunde_B);Serial.print("  Zeit: ");Serial.println(besteZeit_B,3);
+				//Serial.println();
+				showDisplay(1,11,"          ");
+				showDisplay(1,11,(String)runde_B);
+				double t = (double)lapTime_B;
+				lcd.setCursor(15,1);
+				lcd.print(t,2);
+				showDisplay(2,0,"--- beste Runde: ---");
+				showDisplay(3,11,"          ");
+				showDisplay(3,11,(String)besteRunde_B);
+				t = (double)besteZeit_B;
+				lcd.setCursor(15,3);
+				lcd.print(t,2);
       }
       runde_B++;
       n_B--;
       //neue startTime festlegen:
       startTime_B = myTime_B;
     }
-  }
+  } // Ende crossingIR_B
 
   // IR Brücke evtl. zurücksetzen und IR Messung für Vergleich speichern
   if (n_A < IR_off_cycle) n_A--;
