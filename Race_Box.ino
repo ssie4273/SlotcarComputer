@@ -269,7 +269,6 @@ void startingSignal(){
 	int tone_frequency[6] = {0,1000,1000,1000,1000,2000};
 	int tone_duration[6] = {0,tone_short,tone_short,tone_short,tone_short,tone_long};
 	int i = 0;
-	//int offset = 0; // Offset des Array Indesx im Fall eines  Fehlstarts. Fehlstart A: offset = 6, Fehlstart B: offset = 12 
 
 	// Zeige Renninfo auf Display
 
@@ -303,7 +302,6 @@ void startingSignal(){
 		writeRegister(MCP_GPIOA, Port_A[index]);
 		writeRegister(MCP_GPIOB, Port_B[index]);
 		startTone(tone_frequency[i],(unsigned long)tone_duration[i],offset,Port_A[index],Port_B[index]);
-		//Serial.println(offset);
 		i++;
 	};
 }
@@ -364,7 +362,7 @@ void raceLoop() {
       }
       if (runde_A > 0) {
 				Serial.print("A: "); Serial.print("Runde: ");Serial.print(runde_A);Serial.print("  Zeit: ");Serial.println(lapTime_A,3);
-				Serial.print("A:   best: ");Serial.print(besteRunde_A);Serial.print("  Zeit: ");Serial.println(besteZeit_A,3);
+				Serial.print("A:  best: ");Serial.print(besteRunde_A);Serial.print("  Zeit: ");Serial.println(besteZeit_A,3);
 				Serial.println();
 				// Anzeige auf Display fehlt noch
       }
@@ -385,7 +383,7 @@ void raceLoop() {
       }
       if (runde_B > 0) {
 				Serial.print("B: "); Serial.print("Runde: ");Serial.print(runde_B);Serial.print("  Zeit: ");Serial.println(lapTime_B,3);
-				Serial.print("B    best: ");Serial.print(besteRunde_B);Serial.print("  Zeit: ");Serial.println(besteZeit_B,3);
+				Serial.print("B:  best: ");Serial.print(besteRunde_B);Serial.print("  Zeit: ");Serial.println(besteZeit_B,3);
 				Serial.println();
 				// Anzeige auf Display fehlt noch
       }
@@ -404,7 +402,7 @@ void raceLoop() {
   
   // IR Sensoren erneut auslesen.
   delay(IR_sensor_speed);
-}
+} // end of raceLoop
 
 void defineSettings(){
 	boolean firstPageReady = false;
