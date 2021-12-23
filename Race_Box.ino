@@ -310,30 +310,27 @@ void startingSignal(){
  
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(115200);
-	Wire.begin();
+  Serial.begin(115200);	// open serial interface
+	Wire.begin();					// open I2C bus
   
 	lcd.init();
   lcd.backlight();
 	showDisplay(0,0,"*** Testmode ***");
   besteZeit_A = 10000000.0;
   besteZeit_B = 10000000.0;
- 
- for (int thisReading = 0; thisReading < numReadings; thisReading++) {
+	
+	// Smoothing values reported by IR bridges. Pre-set readings arrays.
+	for (int thisReading = 0; thisReading < numReadings; thisReading++) {
     readingsA[thisReading] = analogRead(IR_A);
     readingsB[thisReading] = analogRead(IR_B);
 		totalA = totalA + readingsA[readIndex];
 		totalB = totalB + readingsB[readIndex];
-		Serial.print(readingsA[thisReading]);Serial.print("::::");
-		Serial.println(readingsB[thisReading]);
+		//Serial.print(readingsA[thisReading]);Serial.print("::::");
+		//Serial.println(readingsB[thisReading]);
   }
 	averageA = totalA / numReadings;
 	averageB = totalB / numReadings;
  
-	Serial.print(totalA);Serial.print(" avg A: ");
-	Serial.print(averageA);Serial.print("   ");
-	Serial.print(totalB);Serial.print(" avg B: ");
-	Serial.println(averageB);
   // alle Expander ports: OUTPUT
   writeRegister(MCP_IODIRA, 0b00000000);
   writeRegister(MCP_IODIRB, 0b00000000);
@@ -355,22 +352,9 @@ void setup() {
 
 void raceLoop() {
   // aktives Rennen
-	// diff_A B noch ersetetzen durch boolean
-  analog_A = analogRead(IR_A);
-  analog_B = analogRead(IR_B);
-  // Debugging:
-  //  Serial.print(analog_A); Serial.print(" ("); Serial.print(vorigeMessung_A);Serial.print(")");
-  //  Serial.print("    ");
-  //  Serial.print(analog_B); Serial.print(" ("); Serial.print(vorigeMessung_B);Serial.println(")");
-  diff_A = abs(analog_A - vorigeMessung_A);
-  diff_B = abs(analog_B - vorigeMessung_B);
-
-  
-  if (diff_A > schwellwert_A) {
-    // AutoA durchfährt Lichtschranke
-    //Serial.print("Lichtschranke BahnA mit Runde: ");
-    //Serial.println(runde_A);
-
+	readoutLanes(); // IR Bruecken lesen
+  if (crossingIR_A) {
+    //Auto A durchfährt Lichtschranke
     if (n_A == IR_off_cycle) {
       myTime_A = millis();
       lapTime_A = float(myTime_A - startTime_A) / 1000;
@@ -379,22 +363,10 @@ void raceLoop() {
         besteRunde_A = runde_A;
       }
       if (runde_A > 0) {
-//                Serial.println ("Auto 1 blau:");
-//                Serial.print("letzte Runde: ");
-//                Serial.print(runde_A);
-//                Serial.print(" mit Zeit: ");
-//                Serial.print(lapTime_A,3);
-//                Serial.print("\t\t");
-//                Serial.print("beste Runde: ");
-//                Serial.print(besteRunde_A);
-//                Serial.print(" mit Zeit: ");
-//                Serial.println(besteZeit_A,3);
-//                Serial.println();
-//                Serial.println();
-				String text;
-				text = (String)(lapTime_A, 3);
-				showDisplay(1,10,text);
-				//Serial.print("lapTime: ");Serial.print(text);
+				Serial.print("A: "); Serial.print("Runde: ");Serial.print(runde_A);Serial.print("  Zeit: ");Serial.println(lapTime_A,3);
+				Serial.print("A:   best: ");Serial.print(besteRunde_A);Serial.print("  Zeit: ");Serial.println(besteZeit_A,3);
+				Serial.println();
+				// Anzeige auf Display fehlt noch
       }
       runde_A++;
       n_A--;
@@ -402,11 +374,8 @@ void raceLoop() {
       startTime_A = myTime_A;
     }
   }
-  if (diff_B > schwellwert_B) {
-    // Auto2 durchfährt Lichtschranke
-    //Serial.print("Lichtschranke BahnB mit Runde: ");
-    //Serial.println(runde_B);
-      
+  if (crossingIR_B) {
+    // Auto B durchfährt Lichtschranke
     if (n_B == IR_off_cycle) {
       myTime_B = millis();
       lapTime_B = float(myTime_B - startTime_B) / 1000;
@@ -415,19 +384,10 @@ void raceLoop() {
         besteRunde_B = runde_B;
       }
       if (runde_B > 0) {
-//                Serial.println ("Auto 2 gruen");
-//                Serial.print("letzte Runde: ");
-//                Serial.print(runde_B);
-//                Serial.print(" mit Zeit: ");
-//                Serial.print(lapTime_B,3);
-//                Serial.print("\t\t");
-//                Serial.print("beste Runde: ");
-//                Serial.print(besteRunde_B);
-//                Serial.print(" mit Zeit: ");
-//                Serial.println(besteZeit_B,3);
-//                Serial.println();
-//                Serial.println();
-        //anzeige(1, 'B', (String)runde_B, String(lapTime_B, 3), "");  <-- ersetzen durch showDisplay
+				Serial.print("B: "); Serial.print("Runde: ");Serial.print(runde_B);Serial.print("  Zeit: ");Serial.println(lapTime_B,3);
+				Serial.print("B    best: ");Serial.print(besteRunde_B);Serial.print("  Zeit: ");Serial.println(besteZeit_B,3);
+				Serial.println();
+				// Anzeige auf Display fehlt noch
       }
       runde_B++;
       n_B--;
@@ -441,8 +401,6 @@ void raceLoop() {
   if (n_A == 0) n_A = IR_off_cycle;
   if (n_B < IR_off_cycle) n_B--;
   if (n_B == 0) n_B = IR_off_cycle;
-  vorigeMessung_A = analog_A;
-  vorigeMessung_B = analog_B;
   
   // IR Sensoren erneut auslesen.
   delay(IR_sensor_speed);
@@ -561,32 +519,12 @@ void loop() {
 			showDisplay(0,13,(String)rundenAnzahl);
 			showDisplay(0,16,"R.");
 		}
+		// Bahnstrom einschalten:
 		digitalWrite(rel_A, HIGH); 
 		digitalWrite(rel_B, HIGH);
 		//startingSignal(); 	
-		//btn4.update();
-		//while (!btn4.rose()) raceLoop(); // noch aendern!
 		// Anzeige auf Display
-		readoutLanes();
-		if (diff_A > diffMax_A) {
-			diffMax_A = diff_A;
-			Serial.print("diffMax_A: "); Serial.println(diffMax_A);
-		};
-		if (diff_B > diffMax_B) {
-			diffMax_B = diff_B;
-			Serial.print("diffMax_B: "); Serial.println(diffMax_B);
-		};
-		showDisplay(3,0,"                    ");
-		showDisplay(1,0,(String)analog_A);
-		showDisplay(3,0,(String)diffMax_A);
-		showDisplay(1,10,(String)analog_B);
-		showDisplay(3,10,(String)diffMax_B);
-		Serial.print((String) analog_A);Serial.print("--");Serial.print((String)diffMax_A); Serial.print("    "); Serial.print((String)analog_B);Serial.print("--");Serial.println((String)diffMax_B);	
-		btn4.update();
-		if (btn4.rose()) {
-			diffMax_A = 0;
-			diffMax_B = 0;
-		}	
-		delay(IR_sensor_speed);
-	}
+//		readoutLanes();
+		while (true) raceLoop(); // fehlen noch Abbruchbedingen. 
+	} // Ende von else Rennen
 }
