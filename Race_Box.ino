@@ -61,12 +61,20 @@ int analog_B; // ausgelesener Wert Lichtschranke Bahn2
 int diffMax_A = 0; 
 int diffMax_B = 0;
 int vorigeMessung_A, vorigeMessung_B, diff_A, diff_B;
-int diffMax_A = 0;
-int diffMax_B = 0;
+
+// smoothing der analogRead Werte:
+const int numReadings = 10;			// roundrobin nach 10 Werten
+int readingsA[numReadings];     // the readings from the analog input
+int readingsB[numReadings];     // the readings from the analog input
+int readIndex = 0;
+int averageA, averageB;
+int totalA = 0;									// Summe der Analogwerte
+int totalB = 0;
+
 int n_A = IR_off_cycle;
 int n_B = IR_off_cycle;
 boolean crossingIR_A, crossingIR_B; // Flags f. Fehlstart
-int offset = 0; // offset 6,12 fuer Bahn A fehlstart oder Bahn B Fehlstart
+int offset = 0; // LED Bitmuster: offset 6,12 fuer Bahn A fehlstart oder Bahn B Fehlstart
 
 // Parameter f. Zeitmessung:
 int runde_A = 0;
@@ -104,22 +112,32 @@ byte ArrowDown[] = {
 };
 
 void readoutLanes(){
+
 	// beide Bahnen auslesen und Differenz speichern
 	analog_A = analogRead(IR_A);
   analog_B = analogRead(IR_B);
-	const int sensorMax_A = 150;
-	analog_A = constrain(analog_A, 0,sensorMax_A);
-	analog_A = map(analog_A,0,sensorMax_A,0,255);
+	//const int sensorMax_A = 150;
+	//analog_A = constrain(analog_A, 0,sensorMax_A);
+	//analog_A = map(analog_A,0,sensorMax_A,0,255);
   // Debugging:
   //  Serial.print(analog_A); Serial.print(" ("); Serial.print(vorigeMessung_A);Serial.print(")");
   //  Serial.print("    ");
   //  Serial.print(analog_B); Serial.print(" ("); Serial.print(vorigeMessung_B);Serial.println(")");
-  diff_A = abs(analog_A - vorigeMessung_A);
-  diff_B = abs(analog_B - vorigeMessung_B);
-	if (diff_A < schwellwert_A) crossingIR_A = false; else crossingIR_A = true; // false setzt es auf jeden FAll zurueck
+  totalA = totalA - readingsA[readIndex];
+  totalB = totalB - readingsB[readIndex];
+	readingsA[readIndex] = analog_A;
+	readingsB[readIndex] = analog_B;
+  totalA = totalA + readingsA[readIndex];
+  totalB = totalB + readingsB[readIndex];
+	readIndex = readIndex + 1;
+	if (readIndex >= numReadings) readIndex = 0; // wrap around
+	averageA = totalA / numReadings;
+	averageB = totalB / numReadings;
+		
+	diff_A = abs(analog_A - averageA);
+  diff_B = abs(analog_B - averageB);
+	if (diff_A < schwellwert_A) crossingIR_A = false; else crossingIR_A = true; // false setzt es auf jeden Fall zurueck
   if (diff_B < schwellwert_B) crossingIR_B = false; else crossingIR_B = true;
-  vorigeMessung_A = analog_A;
-  vorigeMessung_B = analog_B;
 }
 
 void showDisplay(int zeile, int spalte, String text) {
@@ -209,7 +227,7 @@ void startTone(int toneheigth, unsigned long intervalTone, int versatz, uint8_t 
 						else if (versatz == 6) versatz = 18;//rechte rote LED an
 				digitalWrite(rel_B, LOW); // Relais Bahn A abschalten
 			} 	
-			Serial.println(versatz);	
+			//Serial.println(versatz);	
 			//Serial.println("IR auslesen");
 		}
 
@@ -285,31 +303,37 @@ void startingSignal(){
 		writeRegister(MCP_GPIOA, Port_A[index]);
 		writeRegister(MCP_GPIOB, Port_B[index]);
 		startTone(tone_frequency[i],(unsigned long)tone_duration[i],offset,Port_A[index],Port_B[index]);
-		Serial.println(offset);
+		//Serial.println(offset);
 		i++;
 	};
 }
  
 void setup() {
-  Serial.begin(115200);
-  lcd.init();
-  lcd.backlight();
- 
   // put your setup code here, to run once:
-  int sum1, sum2;
-  for (int i = 1; i <= 20; i++) {
-    sum1 = sum1 + analogRead(IR_A);
-    sum2 = sum2 + analogRead(IR_B);
-    delay(20);
-  }
-  vorigeMessung_A = sum1 / 20;
-  vorigeMessung_B = sum2 / 20;
-  //  Serial.println(vorigeMessung_A);
-  //  Serial.println(vorigeMessung_B);
+  Serial.begin(115200);
+	Wire.begin();
+  
+	lcd.init();
+  lcd.backlight();
+	showDisplay(0,0,"*** Testmode ***");
   besteZeit_A = 10000000.0;
   besteZeit_B = 10000000.0;
-  
-  Wire.begin();
+ 
+ for (int thisReading = 0; thisReading < numReadings; thisReading++) {
+    readingsA[thisReading] = analogRead(IR_A);
+    readingsB[thisReading] = analogRead(IR_B);
+		totalA = totalA + readingsA[readIndex];
+		totalB = totalB + readingsB[readIndex];
+		Serial.print(readingsA[thisReading]);Serial.print("::::");
+		Serial.println(readingsB[thisReading]);
+  }
+	averageA = totalA / numReadings;
+	averageB = totalB / numReadings;
+ 
+	Serial.print(totalA);Serial.print(" avg A: ");
+	Serial.print(averageA);Serial.print("   ");
+	Serial.print(totalB);Serial.print(" avg B: ");
+	Serial.println(averageB);
   // alle Expander ports: OUTPUT
   writeRegister(MCP_IODIRA, 0b00000000);
   writeRegister(MCP_IODIRB, 0b00000000);
@@ -326,8 +350,6 @@ void setup() {
   // set Bahnrelais to HIGH (Fahrstrom ein, Kontroll LED auf Modul sind aus):
   digitalWrite(rel_A, HIGH);
   digitalWrite(rel_B, HIGH);
-	// dummy readoutLanes():
-	readoutLanes();
 }
 
 
@@ -346,8 +368,8 @@ void raceLoop() {
   
   if (diff_A > schwellwert_A) {
     // AutoA durchfährt Lichtschranke
-    Serial.print("Lichtschranke BahnA mit Runde: ");
-    Serial.println(runde_A);
+    //Serial.print("Lichtschranke BahnA mit Runde: ");
+    //Serial.println(runde_A);
 
     if (n_A == IR_off_cycle) {
       myTime_A = millis();
@@ -372,7 +394,7 @@ void raceLoop() {
 				String text;
 				text = (String)(lapTime_A, 3);
 				showDisplay(1,10,text);
-				Serial.print("lapTime: ");Serial.print(text);
+				//Serial.print("lapTime: ");Serial.print(text);
       }
       runde_A++;
       n_A--;
@@ -382,8 +404,8 @@ void raceLoop() {
   }
   if (diff_B > schwellwert_B) {
     // Auto2 durchfährt Lichtschranke
-    Serial.print("Lichtschranke BahnB mit Runde: ");
-    Serial.println(runde_B);
+    //Serial.print("Lichtschranke BahnB mit Runde: ");
+    //Serial.println(runde_B);
       
     if (n_B == IR_off_cycle) {
       myTime_B = millis();
@@ -541,12 +563,9 @@ void loop() {
 		}
 		digitalWrite(rel_A, HIGH); 
 		digitalWrite(rel_B, HIGH);
-		startingSignal(); 	
-		String stringOne = "Hallo";
-		showDisplay(3,0,stringOne);
-		Serial.println(1.2345, 3);
-		btn4.update();
-		while (!btn4.rose()) raceLoop(); // noch aendern!
+		//startingSignal(); 	
+		//btn4.update();
+		//while (!btn4.rose()) raceLoop(); // noch aendern!
 		// Anzeige auf Display
 		readoutLanes();
 		if (diff_A > diffMax_A) {
@@ -555,17 +574,14 @@ void loop() {
 		};
 		if (diff_B > diffMax_B) {
 			diffMax_B = diff_B;
-			diffMax_A = diff_B;
 			Serial.print("diffMax_B: "); Serial.println(diffMax_B);
 		};
 		showDisplay(3,0,"                    ");
-		showDisplay(0,0,"*** Testmode ***");
 		showDisplay(1,0,(String)analog_A);
-		showDisplay(2,0,(String)diff_A);
 		showDisplay(3,0,(String)diffMax_A);
 		showDisplay(1,10,(String)analog_B);
-		showDisplay(2,10,(String)diff_B);
 		showDisplay(3,10,(String)diffMax_B);
+		Serial.print((String) analog_A);Serial.print("--");Serial.print((String)diffMax_A); Serial.print("    "); Serial.print((String)analog_B);Serial.print("--");Serial.println((String)diffMax_B);	
 		btn4.update();
 		if (btn4.rose()) {
 			diffMax_A = 0;
