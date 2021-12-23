@@ -49,11 +49,7 @@ boolean settingsSwitch = false;
 // Parameter evtl. anpasssen:
 const int schwellwert_A = 20; // IR Empfindlichkeit Bahn A
 const int schwellwert_B = 50; // IR Empfindlichkeit Bahn B
-<<<<<<< Updated upstream
 const int IR_sensor_speed = 5; // IR Brücke wird alle IR_sensor_speed ms ausgelesen
-=======
-const int IR_sensor_speed = 10; // IR Brücke wird alle IR_sensor_speed ms ausgelesen
->>>>>>> Stashed changes
 const int IR_off_cycle = 350; // IR Brücke wird für IR_out_cycle * IR_sensor_speed nicht ausgelesen: nur Spitze des Fahrzeugs wird gewertet.
 const int gesamt = 1000;
 const int tone_short = 50;
@@ -69,11 +65,7 @@ int diffMax_A = 0;
 int diffMax_B = 0;
 int n_A = IR_off_cycle;
 int n_B = IR_off_cycle;
-<<<<<<< Updated upstream
 boolean crossingIR_A, crossingIR_B; // Flags f. Fehlstart
-=======
-boolean crossingIR_A, crossingIR_B;
->>>>>>> Stashed changes
 int offset = 0; // offset 6,12 fuer Bahn A fehlstart oder Bahn B Fehlstart
 
 // Parameter f. Zeitmessung:
@@ -549,16 +541,12 @@ void loop() {
 		}
 		digitalWrite(rel_A, HIGH); 
 		digitalWrite(rel_B, HIGH);
-<<<<<<< Updated upstream
-		//startingSignal(); 	
-=======
 		startingSignal(); 	
 		String stringOne = "Hallo";
 		showDisplay(3,0,stringOne);
 		Serial.println(1.2345, 3);
 		btn4.update();
 		while (!btn4.rose()) raceLoop(); // noch aendern!
->>>>>>> Stashed changes
 		// Anzeige auf Display
 		readoutLanes();
 		if (diff_A > diffMax_A) {
