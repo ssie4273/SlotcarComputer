@@ -1,7 +1,9 @@
-// $Rev: 14 $
-// $Author: stefan $
-// $Date: 2021-12-05 21:45:05 +0100 (Sun, 05 Dec 2021) $
-// $Header: file:///home/stefan/Documents/Carrera/repository/Race_Box/Race_Box.ino 14 2021-12-05 20:45:05Z stefan $
+/***************************************************************
+* Slotcar	Racing Computer 
+* Author:	Stefan Siegel
+* License:GNU General Public License v3.0 (see repo link below)
+* GitHub:	https://github.com/ssie4273/SlotcarComputer.git
+****************************************************************/
 #define BOUNCE_WITH_PROMPT_DETECTION
 
 #include <Wire.h>
@@ -46,12 +48,13 @@ const int IR_B = 0; // Bahn B
 // Schalter: Race -- Set
 boolean settingsSwitch = false;
 
-// Parameter evtl. anpasssen:
+// Parameter evtl. anpasssen:	
+const int penalty = 2000;			// Zeitstrafe bei Fehlstart (ms) 
 const int schwellwert_A = 20; // IR Empfindlichkeit Bahn A
 const int schwellwert_B = 50; // IR Empfindlichkeit Bahn B
-const int IR_sensor_speed = 5; // IR Brücke wird alle IR_sensor_speed ms ausgelesen
+const int IR_sensor_speed = 5;// IR Brücke wird alle IR_sensor_speed ms ausgelesen
 const int IR_off_cycle = 350; // IR Brücke wird für IR_out_cycle * IR_sensor_speed nicht ausgelesen: nur Spitze des Fahrzeugs wird gewertet.
-const int gesamt = 1000;
+const int gesamt = 1000;		// Signalabstand der LED Startampel (ms)
 const int tone_short = 50;
 const int tone_long = 300;
 
@@ -67,13 +70,14 @@ const int numReadings = 10;			// roundrobin nach 10 Werten
 int readingsA[numReadings];     // the readings from the analog input
 int readingsB[numReadings];     // the readings from the analog input
 int readIndex = 0;
-int averageA, averageB;
+int averageA, averageB;					// Mittelwert der letzen <numReadings> Analogwerte
 int totalA = 0;									// Summe der Analogwerte
 int totalB = 0;
 
-int n_A = IR_off_cycle;
+int n_A = IR_off_cycle;	// Zaehlvariable beim augeschalteter IR Bruecke				
 int n_B = IR_off_cycle;
-boolean crossingIR_A, crossingIR_B; // Flags f. Fehlstart
+boolean crossingIR_A, crossingIR_B; // Flags f. Durchfahrt durch IR Schranke
+boolean fehlstart_A, fehlstart_B; // Flags f. Fehlstart
 int offset = 0; // LED Bitmuster: offset 6,12 fuer Bahn A fehlstart oder Bahn B Fehlstart
 
 // Parameter f. Zeitmessung:
@@ -100,6 +104,7 @@ const int minrundenAnzahl = 5;
 // Rennmodus true: Zeitrennen, false: Rundenrennen
 boolean rennModusZeit = true; 
 
+// Sonderzeichen f. LED Display
 byte ArrowDown[] = {
   B00000,
   B00100,
@@ -112,13 +117,9 @@ byte ArrowDown[] = {
 };
 
 void readoutLanes(){
-
 	// beide Bahnen auslesen und Differenz speichern
 	analog_A = analogRead(IR_A);
   analog_B = analogRead(IR_B);
-	//const int sensorMax_A = 150;
-	//analog_A = constrain(analog_A, 0,sensorMax_A);
-	//analog_A = map(analog_A,0,sensorMax_A,0,255);
   // Debugging:
   //  Serial.print(analog_A); Serial.print(" ("); Serial.print(vorigeMessung_A);Serial.print(")");
   //  Serial.print("    ");
@@ -136,15 +137,23 @@ void readoutLanes(){
 		
 	diff_A = abs(analog_A - averageA);
   diff_B = abs(analog_B - averageB);
-	if (diff_A < schwellwert_A) crossingIR_A = false; else crossingIR_A = true; // false setzt es auf jeden Fall zurueck
-  if (diff_B < schwellwert_B) crossingIR_B = false; else crossingIR_B = true;
+	if (diff_A < schwellwert_A) crossingIR_A = false; 
+	else { 
+		crossingIR_A = true; // false setzt es auf jeden Fall zurueck
+		fehlstart_A = true;
+	}	
+  if (diff_B < schwellwert_B) crossingIR_B = false; 
+	else { 
+		crossingIR_B = true;
+		fehlstart_B = true;
+	}
 }
 
 void showDisplay(int zeile, int spalte, String text) {
+	// vereinfachte Anzeige auf LCD 
 	lcd.setCursor(spalte,zeile);
 	lcd.print(text);
 }
-
 
 void writeRegister(uint8_t address, uint8_t ledBitmuster) {
 // Startampel, I2C PortExpander ansteuern:
@@ -171,18 +180,10 @@ void startTone(int toneheigth, unsigned long intervalTone, int versatz, uint8_t 
 	const long intervalIr = (long) IR_sensor_speed; // aus Variablen Definition 
 
 	readoutLanes();
-//	boolean buzzerOn = false;
 	boolean buzzerHasPlayed = true;
 	boolean loopActive = true;
 
 	currentMillisLoop=millis();
-//	if (intervalTone > 0) {
-//		buzzerOn = true;
-//		tone(buzzer,toneheigth);
-//		//delay((int)intervalTone);
-//		//noTone(buzzer);
-//	}	
-	
 	if (toneheigth > 0) {
 		tone(buzzer,toneheigth);
 		delay((int)intervalTone);
@@ -208,29 +209,23 @@ void startTone(int toneheigth, unsigned long intervalTone, int versatz, uint8_t 
 		if (currentMillisTone - previousMillisTone >= intervalTone){
 			previousMillisTone = currentMillisTone;
 			noTone(buzzer);
-//			buzzerOn = false;
-			//Serial.println("Ton aus: intervalTone abgelaufen");
 		} 
-			
 		// IR auslesen und bei Durchfahrt (= Fehlstart) offset setzen bzw. Bahnstrom abschalten
 		unsigned long currentMillisIr = millis();
 		if (currentMillisIr - previousMillisIr >= intervalIr){
 			previousMillisIr = currentMillisIr;
 			readoutLanes();
-			if (crossingIR_A) {
+			if (fehlstart_A) {
 				if (versatz <= 6) versatz = 6; // linke rote LED an
 					else versatz = 18; // beide Aussen LED  --> rot
 				digitalWrite(rel_A, LOW); // Relais Bahn A abschalten
 			} 	
-			if (crossingIR_B) {
+			if (fehlstart_B) {
 				if (versatz == 0) versatz = 12; // beide Aussen LED -->rot 
 						else if (versatz == 6) versatz = 18;//rechte rote LED an
 				digitalWrite(rel_B, LOW); // Relais Bahn A abschalten
 			} 	
-			//Serial.println(versatz);	
-			//Serial.println("IR auslesen");
 		}
-
 		// Fehlstart LED blinken
 		unsigned long currentMillisLED = millis();
 		if (currentMillisLED - previousMillisLED >= intervalLED){
@@ -269,9 +264,7 @@ void startingSignal(){
 	int tone_frequency[6] = {0,1000,1000,1000,1000,2000};
 	int tone_duration[6] = {0,tone_short,tone_short,tone_short,tone_short,tone_long};
 	int i = 0;
-
 	// Zeige Renninfo auf Display
-
 	// Anzeige: Bereit?, Bestaetigen mit taste1
 	// 5 Sekunden Countdown auf Display, Ton (buzzer)
 	// s.a. https://electric-junkie.de/2020/08/arduino-millis-anstatt-von-delay/
@@ -293,7 +286,7 @@ void startingSignal(){
 		writeRegister(MCP_GPIOA,2);
 		writeRegister(MCP_GPIOB,0);
 		delay(blink);
-	
+	// now start the signal:	
 	i = 0;	
 	while (i < 6) {
 		int index = i + offset;
@@ -306,48 +299,6 @@ void startingSignal(){
 	};
 }
  
-void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(115200);	// open serial interface
-	Wire.begin();					// open I2C bus
-  
-	lcd.init();
-  lcd.backlight();
-	showDisplay(0,0,"*** Testmode ***");
-  besteZeit_A = 10000000.0;
-  besteZeit_B = 10000000.0;
-	
-	// Smoothing values reported by IR bridges. Pre-set readings arrays.
-	for (int thisReading = 0; thisReading < numReadings; thisReading++) {
-    readingsA[thisReading] = analogRead(IR_A);
-    readingsB[thisReading] = analogRead(IR_B);
-		totalA = totalA + readingsA[readIndex];
-		totalB = totalB + readingsB[readIndex];
-		//Serial.print(readingsA[thisReading]);Serial.print("::::");
-		//Serial.println(readingsB[thisReading]);
-  }
-	averageA = totalA / numReadings;
-	averageB = totalB / numReadings;
- 
-  // alle Expander ports: OUTPUT
-  writeRegister(MCP_IODIRA, 0b00000000);
-  writeRegister(MCP_IODIRB, 0b00000000);
-  
-	// Definition Taster u. Schalter:
-  pinMode(taste1,INPUT);
-  pinMode(taste2,INPUT);
-  pinMode(taste3,INPUT);
-  pinMode(taste4,INPUT);
-  pinMode(set_race,INPUT);
-  pinMode(rel_A,OUTPUT);
-  pinMode(rel_B,OUTPUT);
-  
-  // set Bahnrelais to HIGH (Fahrstrom ein, Kontroll LED auf Modul sind aus):
-  digitalWrite(rel_A, HIGH);
-  digitalWrite(rel_B, HIGH);
-}
-
-
 void raceLoop() {
   // aktives Rennen
 	readoutLanes(); // IR Bruecken lesen
@@ -419,7 +370,6 @@ void raceLoop() {
   if (n_A == 0) n_A = IR_off_cycle;
   if (n_B < IR_off_cycle) n_B--;
   if (n_B == 0) n_B = IR_off_cycle;
-  
   // IR Sensoren erneut auslesen.
   delay(IR_sensor_speed);
 } // end of raceLoop
@@ -450,7 +400,7 @@ void defineSettings(){
 				rennModusZeit=false; // Rundenrennen
 				firstPageReady=true;
 			}
-		}
+		} // end of firstPageReady
 		// 2. Seite: Anzahl Minuten oder Rundeneinstellen:
 		lcd.clear();
 		showDisplay(0,0,"Einstellungen:");
@@ -491,7 +441,7 @@ void defineSettings(){
 			if (btn4.rose()){
 				secondPageReady = true;
 			}
-		}
+		} // end od secondPageReady
 		// Alle Settings verfuegbar:
 		lcd.clear();
 		showDisplay(0,0,"Renntyp:");
@@ -516,9 +466,70 @@ void defineSettings(){
 			}
 		settingsSwitch=digitalRead(set_race); // Schalter noch auf Settings?
 		} 	
-	}
-}
+	} // end of while(settingsSwitch)
+} // end of define Settings
  
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);	// open serial interface
+	Wire.begin();					// open I2C bus
+  
+	lcd.init();
+  lcd.backlight();
+	showDisplay(0,0,"*** RaceComputer ***");
+  besteZeit_A = 10000000.0;
+  besteZeit_B = 10000000.0;
+	
+	// Smoothing values reported by IR bridges. Pre-set readings arrays.
+	for (int thisReading = 0; thisReading < numReadings; thisReading++) {
+    readingsA[thisReading] = analogRead(IR_A);
+    readingsB[thisReading] = analogRead(IR_B);
+		totalA = totalA + readingsA[readIndex];
+		totalB = totalB + readingsB[readIndex];
+		//Serial.print(readingsA[thisReading]);Serial.print("::::");
+		//Serial.println(readingsB[thisReading]);
+  }
+	averageA = totalA / numReadings;
+	averageB = totalB / numReadings;
+ 
+  // alle Expander ports: OUTPUT, rot-gruen Testblinken
+  writeRegister(MCP_IODIRA, 0b00000000);
+  writeRegister(MCP_IODIRB, 0b00000000);
+	int blink = 200;
+	int b = 1;
+	writeRegister(MCP_GPIOB,0b00000000);
+	for (int i = 1; i <= 4; i++) { 
+		writeRegister(MCP_GPIOA,b);
+		b <<= 2;
+		delay(blink);
+	};
+	writeRegister(MCP_GPIOA,0b00000000);
+	writeRegister(MCP_GPIOB,0b00000001);
+	delay(blink);
+	writeRegister(MCP_GPIOB,0b00000010);
+	delay(blink);
+	writeRegister(MCP_GPIOB,0b00000000);
+	b = 128;
+	for (int i = 1; i <= 4; i++) { 
+		writeRegister(MCP_GPIOA,b);
+		b >>= 2;
+		delay(blink);
+	};
+	writeRegister(MCP_GPIOA,0b00000000);
+	// Definition Taster u. Schalter:
+  pinMode(taste1,INPUT);
+  pinMode(taste2,INPUT);
+  pinMode(taste3,INPUT);
+  pinMode(taste4,INPUT);
+  pinMode(set_race,INPUT);
+  pinMode(rel_A,OUTPUT);
+  pinMode(rel_B,OUTPUT);
+  
+  // set Bahnrelais to HIGH (Fahrstrom ein, Kontroll LED auf Modul sind aus):
+  digitalWrite(rel_A, HIGH);
+  digitalWrite(rel_B, HIGH);
+} // void setup
+
 void loop() {
 	// put your main code here, to run repeatedly:
 	settingsSwitch=digitalRead(set_race);
@@ -529,13 +540,13 @@ void loop() {
 		offset=0; // LED: normale Startsequenz
 		lcd.clear();	
 		if (rennModusZeit) {
-			showDisplay(0,0,"Zeitrennen");
-			showDisplay(0,11,(String)rennDauer);
-			showDisplay(0,13,"Min.");
+			showDisplay(0,1,"Zeit: ");
+			showDisplay(0,7,(String)rennDauer);
+			showDisplay(0,10,"Min.");
 		} else {
-			showDisplay(0,0,"Rundenrennen");
-			showDisplay(0,13,(String)rundenAnzahl);
-			showDisplay(0,16,"R.");
+			showDisplay(0,1,"Runden: ");
+			showDisplay(0,9,(String)rundenAnzahl);
+			showDisplay(0,12,"R.");
 		}
 		// Bahnstrom einschalten:
 		digitalWrite(rel_A, HIGH); 
