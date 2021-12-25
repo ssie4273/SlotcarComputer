@@ -14,7 +14,7 @@
 // I2C Adresse: 0x27
 LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4);
  
-//Portexpander LED Startampel
+// 16 bit Portexpander LED Startampel
 // I2C Adresse> 0x20
 const uint8_t MCP_ADDRESS = 0x20;
 const uint8_t MCP_GPIOA = 0x12;
@@ -47,9 +47,12 @@ const int IR_B = 0; // Bahn B
 
 // Schalter: Race -- Set
 boolean settingsSwitch = false;
+boolean raceOn = false; // Rennen laeuft.
 
 // Parameter evtl. anpasssen:	
-const int penalty = 2000;			// Zeitstrafe bei Fehlstart (ms) 
+const long penalty = 3000;			// Zeitstrafe bei Fehlstart (ms) 
+unsigned long previousRaceDuration = 0;
+unsigned long startTimeRace;	// Zeitstempel: Start des Rennens
 const int schwellwert_A = 20; // IR Empfindlichkeit Bahn A
 const int schwellwert_B = 50; // IR Empfindlichkeit Bahn B
 const int IR_sensor_speed = 5;// IR Brücke wird alle IR_sensor_speed ms ausgelesen
@@ -77,7 +80,8 @@ int totalB = 0;
 int n_A = IR_off_cycle;	// Zaehlvariable beim augeschalteter IR Bruecke				
 int n_B = IR_off_cycle;
 boolean crossingIR_A, crossingIR_B; // Flags f. Durchfahrt durch IR Schranke
-boolean fehlstart_A, fehlstart_B; // Flags f. Fehlstart
+boolean fehlstart_A = false; // Flags f. Fehlstart
+boolean fehlstart_B = false;
 int offset = 0; // LED Bitmuster: offset 6,12 fuer Bahn A fehlstart oder Bahn B Fehlstart
 
 // Parameter f. Zeitmessung:
@@ -137,16 +141,8 @@ void readoutLanes(){
 		
 	diff_A = abs(analog_A - averageA);
   diff_B = abs(analog_B - averageB);
-	if (diff_A < schwellwert_A) crossingIR_A = false; 
-	else { 
-		crossingIR_A = true; // false setzt es auf jeden Fall zurueck
-		fehlstart_A = true;
-	}	
-  if (diff_B < schwellwert_B) crossingIR_B = false; 
-	else { 
-		crossingIR_B = true;
-		fehlstart_B = true;
-	}
+	if (diff_A < schwellwert_A) crossingIR_A = false; else crossingIR_A = true; // false setzt es auf jeden Fall zurueck	
+  if (diff_B < schwellwert_B) crossingIR_B = false; else crossingIR_B = true;
 }
 
 void showDisplay(int zeile, int spalte, String text) {
@@ -215,15 +211,18 @@ void startTone(int toneheigth, unsigned long intervalTone, int versatz, uint8_t 
 		if (currentMillisIr - previousMillisIr >= intervalIr){
 			previousMillisIr = currentMillisIr;
 			readoutLanes();
-			if (fehlstart_A) {
+			
+			if (crossingIR_A) {
+				digitalWrite(rel_A, LOW); // Relais Bahn A abschalten
+				fehlstart_A = true;
 				if (versatz <= 6) versatz = 6; // linke rote LED an
 					else versatz = 18; // beide Aussen LED  --> rot
-				digitalWrite(rel_A, LOW); // Relais Bahn A abschalten
 			} 	
-			if (fehlstart_B) {
+			if (crossingIR_B) {
+				digitalWrite(rel_B, LOW); // Relais Bahn A abschalten
+				fehlstart_B = true;
 				if (versatz == 0) versatz = 12; // beide Aussen LED -->rot 
 						else if (versatz == 6) versatz = 18;//rechte rote LED an
-				digitalWrite(rel_B, LOW); // Relais Bahn A abschalten
 			} 	
 		}
 		// Fehlstart LED blinken
@@ -271,6 +270,7 @@ void startingSignal(){
 	
 	readoutLanes();
 	// very first LED.
+	delay(1000);
 	int blink=100;
 	for (int i = 0; i <= 2; i++) { 
 		writeRegister(MCP_GPIOA,1);
@@ -292,9 +292,9 @@ void startingSignal(){
 		int index = i + offset;
 		// Serial.print(index); Serial.print("  "); Serial.println(Port_A[index],BIN);
 		// Serial.print(index); Serial.print("  "); Serial.println(Port_B[index],BIN);
+		startTone(tone_frequency[i],(unsigned long)tone_duration[i],offset,Port_A[index],Port_B[index]);
 		writeRegister(MCP_GPIOA, Port_A[index]);
 		writeRegister(MCP_GPIOB, Port_B[index]);
-		startTone(tone_frequency[i],(unsigned long)tone_duration[i],offset,Port_A[index],Port_B[index]);
 		i++;
 	};
 }
@@ -524,7 +524,7 @@ void setup() {
 	//LED aus:
 	writeRegister(MCP_GPIOA,0);
 	writeRegister(MCP_GPIOB,0);
-	
+
 	// Definition Taster u. Schalter:
   pinMode(taste1,INPUT);
   pinMode(taste2,INPUT);
@@ -560,8 +560,28 @@ void loop() {
 		// Bahnstrom einschalten:
 		digitalWrite(rel_A, HIGH); 
 		digitalWrite(rel_B, HIGH);
-		//startingSignal(); 	
-		// Anzeige auf Display
-		while (true) raceLoop(); // fehlen noch Abbruchbedingen. 
+		startingSignal(); 	
+		startTimeRace = millis(); // Zeitstempel: Start des Rennens 
+		raceOn = true;
+		while ((!settingsSwitch && raceOn)) {// fehlen noch Endebedingungen (Rundenzahl erreicht, Zeit erreicht.
+			// Fehlstartstrafe wieder freischalten:
+			if ((fehlstart_A || fehlstart_B) && (millis()-startTimeRace > penalty)) {
+				digitalWrite(rel_A,HIGH);
+				digitalWrite(rel_B,HIGH);
+				fehlstart_A = false;
+				fehlstart_B = false;
+			}; 
+			raceLoop();
+			if (rennModusZeit) {
+				//Zeitrennen: Abbruch pruefen		
+
+			}	
+			else {
+				//Rundenrennen: Abbruch pruefen
+
+			}
+
+		settingsSwitch=digitalRead(set_race); // Schalter neu einlesen.
+		} 
 	} // Ende von else Rennen
 }
