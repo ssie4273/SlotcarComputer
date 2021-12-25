@@ -495,27 +495,36 @@ void setup() {
   // alle Expander ports: OUTPUT, rot-gruen Testblinken
   writeRegister(MCP_IODIRA, 0b00000000);
   writeRegister(MCP_IODIRB, 0b00000000);
-	int blink = 200;
-	int b = 1;
-	writeRegister(MCP_GPIOB,0b00000000);
-	for (int i = 1; i <= 4; i++) { 
-		writeRegister(MCP_GPIOA,b);
-		b <<= 2;
+	int blink = 150;
+	int b  = 0b0000000000000001;
+	int hm = 0b1111111100000000;
+	int lm = 0b0000000011111111;
+	int portA,portB;
+	//Lauflicht gruen von links nach rechts:
+	for (int i=1; i <= 5; i++) {
+		portA = b&lm;
+		portB = (b & hm) >> 8;
+		writeRegister(MCP_GPIOA,portA);
+		writeRegister(MCP_GPIOB,portB);
+		//Serial.print("PORT>  ");Serial.print(portB,BIN); Serial.print("  ");Serial.println(portA,BIN);
+		b <<= 2 ; //von low nach high 
 		delay(blink);
 	};
-	writeRegister(MCP_GPIOA,0b00000000);
-	writeRegister(MCP_GPIOB,0b00000001);
-	delay(blink);
-	writeRegister(MCP_GPIOB,0b00000010);
-	delay(blink);
-	writeRegister(MCP_GPIOB,0b00000000);
-	b = 128;
-	for (int i = 1; i <= 4; i++) { 
-		writeRegister(MCP_GPIOA,b);
-		b >>= 2;
+	// Lauflicht rot von rechts nach links
+	b <<= 1; // eins weiter auf rot schieben.
+	for (int i=1; i <= 6; i++) {
+		portA = b&lm;
+		portB = (b & hm) >> 8;
+		writeRegister(MCP_GPIOA,portA);
+		writeRegister(MCP_GPIOB,portB);
+		//Serial.print("PORT>  ");Serial.print(portB,BIN); Serial.print("  ");Serial.println(portA,BIN);
+		b >>= 2 ; //von high nach low
 		delay(blink);
 	};
-	writeRegister(MCP_GPIOA,0b00000000);
+	//LED aus:
+	writeRegister(MCP_GPIOA,0);
+	writeRegister(MCP_GPIOB,0);
+	
 	// Definition Taster u. Schalter:
   pinMode(taste1,INPUT);
   pinMode(taste2,INPUT);
