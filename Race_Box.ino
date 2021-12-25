@@ -570,18 +570,31 @@ void loop() {
 				digitalWrite(rel_B,HIGH);
 				fehlstart_A = false;
 				fehlstart_B = false;
+				writeRegister(MCP_GPIOA,0);
+				writeRegister(MCP_GPIOB,0);
 			}; 
 			raceLoop();
-			if (rennModusZeit) {
-				//Zeitrennen: Abbruch pruefen		
-
-			}	
-			else {
-				//Rundenrennen: Abbruch pruefen
-
+			// Abbruch pruefen
+			float aktuelleRenndauer = float(millis()-startTimeRace)/1000;
+			float r = float(rennDauer)*60;
+			Serial.print(aktuelleRenndauer); Serial.print(" ---  "); Serial.println(r);
+			if ( !rennModusZeit && ((runde_A > rundenAnzahl) || (runde_B > rundenAnzahl)) ) {
+				// Race ENDE
+				raceOn = false;
+				digitalWrite(rel_A, LOW); 
+				digitalWrite(rel_B, LOW);
+				showDisplay(3,0,"ENDE");
+				delay(60000);	
 			}
-
-		settingsSwitch=digitalRead(set_race); // Schalter neu einlesen.
+			if ( rennModusZeit && (aktuelleRenndauer > r) ) {
+				// Race ENDE
+				raceOn = false; 
+				digitalWrite(rel_A, LOW); 
+				digitalWrite(rel_B, LOW);
+				showDisplay(3,0,"ENDE");
+				delay(60000);	
+			}
+			settingsSwitch=digitalRead(set_race); // Schalter neu einlesen.
 		} 
 	} // Ende von else Rennen
 }
