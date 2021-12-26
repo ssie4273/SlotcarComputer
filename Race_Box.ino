@@ -216,12 +216,14 @@ void startTone(int toneheigth, unsigned long intervalTone, int versatz, uint8_t 
 			if (crossingIR_A) {
 				digitalWrite(rel_A, LOW); // Relais Bahn A abschalten
 				fehlstart_A = true;
+				runde_A = 1;
 				if (versatz <= 6) versatz = 6; // linke rote LED an
 					else versatz = 18; // beide Aussen LED  --> rot
 			} 	
 			if (crossingIR_B) {
 				digitalWrite(rel_B, LOW); // Relais Bahn A abschalten
 				fehlstart_B = true;
+				runde_B = 1;
 				if (versatz == 0) versatz = 12; // beide Aussen LED -->rot 
 						else if (versatz == 6) versatz = 18;//rechte rote LED an
 			} 	
@@ -441,6 +443,7 @@ void defineSettings(){
 			showDisplay(3,17,"OK");
 			if (btn4.rose()){
 				secondPageReady = true;
+				raceOn = true; // alle Parameter gesetzt. Wir koennen das Rennen starten. 
 			}
 		} // end od secondPageReady
 		// Alle Settings verfuegbar:
@@ -464,6 +467,7 @@ void defineSettings(){
 			if (btn1.rose()) {
 				firstPageReady = false;	
 				secondPageReady = false;	
+				raceOn = false;
 			}
 		settingsSwitch=digitalRead(set_race); // Schalter noch auf Settings?
 		} 	
@@ -561,18 +565,25 @@ void loop() {
 		// Bahnstrom einschalten:
 		digitalWrite(rel_A, HIGH); 
 		digitalWrite(rel_B, HIGH);
-		startingSignal(); 	
-		startTimeRace = millis(); // Zeitstempel: Start des Rennens 
-		startTime_A = startTimeRace;
-		startTime_B = startTimeRace;
-		raceOn = true;
+		if (raceOn) {
+			startingSignal(); 	
+			startTimeRace = millis(); // Zeitstempel: Start des Rennens 
+			startTime_A = startTimeRace;
+			startTime_B = startTimeRace;
+		}
 		while ((!settingsSwitch && raceOn)) {// fehlen noch Endebedingungen (Rundenzahl erreicht, Zeit erreicht.
 			// Fehlstartstrafe wieder freischalten:
 			if ((fehlstart_A || fehlstart_B) && (millis()-startTimeRace > penalty)) {
 				digitalWrite(rel_A,HIGH);
 				digitalWrite(rel_B,HIGH);
-				fehlstart_A = false;
-				fehlstart_B = false;
+				if (fehlstart_A) {
+					startTime_A = startTimeRace;
+					fehlstart_A = false;
+				}
+				if (fehlstart_B) {
+					startTime_B = startTimeRace;
+					fehlstart_B = false;
+				}
 				writeRegister(MCP_GPIOA,0);
 				writeRegister(MCP_GPIOB,0);
 			}; 
@@ -586,16 +597,16 @@ void loop() {
 				raceOn = false;
 				digitalWrite(rel_A, LOW); 
 				digitalWrite(rel_B, LOW);
-				showDisplay(3,0,"ENDE");
-				delay(60000);	
+				showDisplay(3,9,"ENDE");
+				//delay(60000);	
 			}
 			if ( rennModusZeit && (aktuelleRenndauer > r) ) {
 				// Race ENDE
 				raceOn = false; 
 				digitalWrite(rel_A, LOW); 
 				digitalWrite(rel_B, LOW);
-				showDisplay(3,0,"ENDE");
-				delay(60000);	
+				showDisplay(3,9,"ENDE");
+				//delay(60000);	
 			}
 			settingsSwitch=digitalRead(set_race); // Schalter neu einlesen.
 		} 
