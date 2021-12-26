@@ -47,7 +47,7 @@ const int IR_B = 0; // Bahn B
 
 // Schalter: Race -- Set
 boolean settingsSwitch = false;
-boolean raceOn = false; // Rennen laeuft.
+boolean raceOn = true; // Rennen laeuft.
 
 // Parameter evtl. anpasssen:	
 const long penalty = 3000;			// Zeitstrafe bei Fehlstart (ms) 
@@ -309,7 +309,7 @@ void raceLoop() {
     //Auto A durchfährt Lichtschranke
     if (n_A == IR_off_cycle) { // nur beim allererstem Signal triggern, danach stummschalten fuer IR_offcycle*IR_sensor_speed
 			if (runde_A > 0) {
-				myTime_A = millis();
+			  myTime_A = millis();
 				lapTime_A = float(myTime_A - startTime_A) / 1000;
 				if (lapTime_A < besteZeit_A && runde_A > 0) {
 					besteZeit_A = lapTime_A;
@@ -330,6 +330,10 @@ void raceLoop() {
 				lcd.setCursor(4,3);
 				lcd.print(t,2);
       }
+			else {
+			// allererste Durchfahrt:
+				myTime_A = startTimeRace;
+			}
       runde_A++;
       n_A--;
       //neue startTime festlegen:
@@ -361,6 +365,10 @@ void raceLoop() {
 				lcd.setCursor(15,3);
 				lcd.print(t,2);
       }
+			else {
+			// allererste Durchfahrt:
+				myTime_B = startTimeRace;
+			}
       runde_B++;
       n_B--;
       //neue startTime festlegen:
@@ -571,7 +579,7 @@ void loop() {
 			startTime_A = startTimeRace;
 			startTime_B = startTimeRace;
 		}
-		while ((!settingsSwitch && raceOn)) {// fehlen noch Endebedingungen (Rundenzahl erreicht, Zeit erreicht.
+		while ((!settingsSwitch && raceOn)) {
 			// Fehlstartstrafe wieder freischalten:
 			if ((fehlstart_A || fehlstart_B) && (millis()-startTimeRace > penalty)) {
 				digitalWrite(rel_A,HIGH);
@@ -598,7 +606,11 @@ void loop() {
 				digitalWrite(rel_A, LOW); 
 				digitalWrite(rel_B, LOW);
 				showDisplay(3,9,"ENDE");
-				//delay(60000);	
+				btn4.update();
+				while (!btn4.rose()) {
+					raceOn = true;
+					btn4.update();
+				}
 			}
 			if ( rennModusZeit && (aktuelleRenndauer > r) ) {
 				// Race ENDE
