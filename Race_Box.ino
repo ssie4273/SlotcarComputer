@@ -579,7 +579,7 @@ void loop() {
 			startTime_A = startTimeRace;
 			startTime_B = startTimeRace;
 		}
-		while ((!settingsSwitch && raceOn)) {
+		while ((!settingsSwitch && raceOn)) 
 			// Fehlstartstrafe wieder freischalten:
 			if ((fehlstart_A || fehlstart_B) && (millis()-startTimeRace > penalty)) {
 				digitalWrite(rel_A,HIGH);
@@ -599,17 +599,21 @@ void loop() {
 			// Abbruch pruefen
 			float aktuelleRenndauer = float(millis()-startTimeRace)/1000;
 			float r = float(rennDauer)*60;
-			Serial.print(aktuelleRenndauer); Serial.print(" ---  "); Serial.println(r);
 			if ( !rennModusZeit && ((runde_A > rundenAnzahl) || (runde_B > rundenAnzahl)) ) {
 				// Race ENDE
 				raceOn = false;
 				digitalWrite(rel_A, LOW); 
 				digitalWrite(rel_B, LOW);
 				showDisplay(3,9,"ENDE");
-				btn4.update();
-				while (!btn4.rose()) {
-					raceOn = true;
+				Serial.println("Ende Ende Runde");
+				while (!raceOn) {
 					btn4.update();
+					if (btn4.rose()) {
+						Serial.println("Rundenrennen Ende: Taste 4 gedrueckt.");
+						raceOn = true;
+						runde_A = 0;
+						runde_B = 0;
+					}
 				}
 			}
 			if ( rennModusZeit && (aktuelleRenndauer > r) ) {
@@ -618,7 +622,15 @@ void loop() {
 				digitalWrite(rel_A, LOW); 
 				digitalWrite(rel_B, LOW);
 				showDisplay(3,9,"ENDE");
-				//delay(60000);	
+				Serial.println("Ende Ende Zeit");
+				while (!raceOn) {
+					btn4.update();
+					if (btn4.rose()) {
+						Serial.println("Zeitrennen Ende: Taste 4 gedrueckt.");
+						raceOn = true;
+						aktuelleRenndauer = 0;
+					}
+				}
 			}
 			settingsSwitch=digitalRead(set_race); // Schalter neu einlesen.
 		} 
