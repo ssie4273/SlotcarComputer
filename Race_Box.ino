@@ -79,7 +79,8 @@ int totalB = 0;
 
 int n_A = IR_off_cycle;	// Zaehlvariable beim augeschalteter IR Bruecke				
 int n_B = IR_off_cycle;
-boolean crossingIR_A, crossingIR_B; // Flags f. Durchfahrt durch IR Schranke
+boolean crossingIR_A = false;
+boolean crossingIR_B = false; // Flags f. Durchfahrt durch IR Schranke
 boolean fehlstart_A = false; // Flags f. Fehlstart
 boolean fehlstart_B = false;
 int offset = 0; // LED Bitmuster: offset 6,12 fuer Bahn A fehlstart oder Bahn B Fehlstart
@@ -305,13 +306,13 @@ void raceLoop() {
   if (crossingIR_A) {
     //Auto A durchfährt Lichtschranke
     if (n_A == IR_off_cycle) { // nur beim allererstem Signal triggern, danach stummschalten fuer IR_offcycle*IR_sensor_speed
-      myTime_A = millis();
-      lapTime_A = float(myTime_A - startTime_A) / 1000;
-      if (lapTime_A < besteZeit_A && runde_A > 0) {
-        besteZeit_A = lapTime_A;
-        besteRunde_A = runde_A;
-      }
-      if (runde_A > 0) {
+			if (runde_A > 0) {
+				myTime_A = millis();
+				lapTime_A = float(myTime_A - startTime_A) / 1000;
+				if (lapTime_A < besteZeit_A && runde_A > 0) {
+					besteZeit_A = lapTime_A;
+					besteRunde_A = runde_A;
+				}
 				//Serial.print("A: "); Serial.print("Runde: ");Serial.print(runde_A);Serial.print("  Zeit: ");Serial.println(lapTime_A,3);
 				//Serial.print("A:  best: ");Serial.print(besteRunde_A);Serial.print("  Zeit: ");Serial.println(besteZeit_A,3);
 				//Serial.println();
@@ -336,13 +337,13 @@ void raceLoop() {
   if (crossingIR_B) {
     // Auto B durchfährt Lichtschranke
     if (n_B == IR_off_cycle) { // nur beim allererstem Signal triggern, danach stummschalten fuer IR_offcycle*IR_sensor_speed
-      myTime_B = millis();
-      lapTime_B = float(myTime_B - startTime_B) / 1000;
-      if (lapTime_B < besteZeit_B && runde_B > 0) {
-        besteZeit_B = lapTime_B;
-        besteRunde_B = runde_B;
-      }
       if (runde_B > 0) {
+				myTime_B = millis();
+				lapTime_B = float(myTime_B - startTime_B) / 1000;
+				if (lapTime_B < besteZeit_B && runde_B > 0) {
+					besteZeit_B = lapTime_B;
+					besteRunde_B = runde_B;
+				}
 				//Serial.print("B: "); Serial.print("Runde: ");Serial.print(runde_B);Serial.print("  Zeit: ");Serial.println(lapTime_B,3);
 				//Serial.print("B:  best: ");Serial.print(besteRunde_B);Serial.print("  Zeit: ");Serial.println(besteZeit_B,3);
 				//Serial.println();
@@ -521,7 +522,7 @@ void setup() {
 		b >>= 2 ; //von high nach low
 		delay(blink);
 	};
-	//LED aus:
+	//LEDs aus:
 	writeRegister(MCP_GPIOA,0);
 	writeRegister(MCP_GPIOB,0);
 
@@ -562,6 +563,8 @@ void loop() {
 		digitalWrite(rel_B, HIGH);
 		startingSignal(); 	
 		startTimeRace = millis(); // Zeitstempel: Start des Rennens 
+		startTime_A = startTimeRace;
+		startTime_B = startTimeRace;
 		raceOn = true;
 		while ((!settingsSwitch && raceOn)) {// fehlen noch Endebedingungen (Rundenzahl erreicht, Zeit erreicht.
 			// Fehlstartstrafe wieder freischalten:
