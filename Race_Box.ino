@@ -36,7 +36,7 @@ Bounce btn1 = Bounce(taste1,30);
 Bounce btn2 = Bounce(taste2,30);
 Bounce btn3 = Bounce(taste3,30);
 Bounce btn4 = Bounce(taste4,30);
-const int set_race=7;
+const int set_race=7; // Kippschalter: Rennen / Settings
 const int rel_A=8;
 const int rel_B=9;
 
@@ -107,7 +107,7 @@ const int minrennDauer = 2;
 const int maxrundenAnzahl = 100;
 const int minrundenAnzahl = 5;
 // Rennmodus true: Zeitrennen, false: Rundenrennen
-boolean rennModusZeit = true; 
+boolean rennModusZeit = false; // true: Zeitrennen, false: Rundenrunnen
 
 // Sonderzeichen f. LED Display
 byte ArrowDown[] = {
@@ -216,7 +216,7 @@ void startTone(int toneheigth, unsigned long intervalTone, int versatz, uint8_t 
 			if (crossingIR_A) {
 				digitalWrite(rel_A, LOW); // Relais Bahn A abschalten
 				fehlstart_A = true;
-				runde_A = 1;
+				runde_A = 1; 
 				if (versatz <= 6) versatz = 6; // linke rote LED an
 					else versatz = 18; // beide Aussen LED  --> rot
 			} 	
@@ -291,6 +291,8 @@ void startingSignal(){
 		delay(blink);
 	// now start the signal:	
 	i = 0;	
+	runde_A = 0;
+	runde_B = 0;
 	while (i < 6) {
 		int index = i + offset;
 		// Serial.print(index); Serial.print("  "); Serial.println(Port_A[index],BIN);
@@ -300,6 +302,7 @@ void startingSignal(){
 		writeRegister(MCP_GPIOB, Port_B[index]);
 		i++;
 	};
+raceOn = true;
 }
  
 void raceLoop() {
@@ -391,6 +394,7 @@ void defineSettings(){
   lcd.createChar(0, ArrowDown);
   settingsSwitch=digitalRead(set_race);
 	while (settingsSwitch) {
+		raceOn = false;
 		// 1. Seite: Zeitrennen oder Rundenrennen
 		lcd.clear();
 		showDisplay(0,0,"Einstellungen:");
@@ -451,7 +455,6 @@ void defineSettings(){
 			showDisplay(3,17,"OK");
 			if (btn4.rose()){
 				secondPageReady = true;
-				raceOn = true; // alle Parameter gesetzt. Wir koennen das Rennen starten. 
 			}
 		} // end od secondPageReady
 		// Alle Settings verfuegbar:
@@ -475,7 +478,6 @@ void defineSettings(){
 			if (btn1.rose()) {
 				firstPageReady = false;	
 				secondPageReady = false;	
-				raceOn = false;
 			}
 		settingsSwitch=digitalRead(set_race); // Schalter noch auf Settings?
 		} 	
@@ -573,7 +575,11 @@ void loop() {
 		// Bahnstrom einschalten:
 		digitalWrite(rel_A, HIGH); 
 		digitalWrite(rel_B, HIGH);
-		if (raceOn) {
+		if (!raceOn) { // alle Startparameter wieder auf Anfangswerte setzen:
+			besteRunde_A = 0;
+			besteRunde_B = 0;
+			besteZeit_A = 10000000.0;
+			besteZeit_B = 10000000.0;
 			startingSignal(); 	
 			startTimeRace = millis(); // Zeitstempel: Start des Rennens 
 			startTime_A = startTimeRace;
@@ -599,16 +605,15 @@ void loop() {
 			// Abbruch pruefen
 			float aktuelleRenndauer = float(millis()-startTimeRace)/1000;
 			float r = float(rennDauer)*60;
-			Serial.print(aktuelleRenndauer); Serial.print(" ---  "); Serial.println(r);
+			//Serial.print(aktuelleRenndauer); Serial.print(" ---  "); Serial.println(r);
 			if ( !rennModusZeit && ((runde_A > rundenAnzahl) || (runde_B > rundenAnzahl)) ) {
 				// Race ENDE
 				raceOn = false;
 				digitalWrite(rel_A, LOW); 
 				digitalWrite(rel_B, LOW);
-				showDisplay(3,9,"ENDE");
+				showDisplay(3,9,"E");
 				btn4.update();
 				while (!btn4.rose()) {
-					raceOn = true;
 					btn4.update();
 				}
 			}
@@ -617,8 +622,11 @@ void loop() {
 				raceOn = false; 
 				digitalWrite(rel_A, LOW); 
 				digitalWrite(rel_B, LOW);
-				showDisplay(3,9,"ENDE");
-				//delay(60000);	
+				showDisplay(3,9,"E");
+				btn4.update();
+				while (!btn4.rose()) {
+					btn4.update();
+				}
 			}
 			settingsSwitch=digitalRead(set_race); // Schalter neu einlesen.
 		} 
