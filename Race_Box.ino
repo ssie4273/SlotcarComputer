@@ -48,6 +48,7 @@ const int IR_B = 0; // Bahn B
 // Schalter: Race -- Set
 boolean settingsSwitch = false;
 boolean raceOn = false; // Rennen laeuft.
+boolean showEndergebnis = false;
 
 // Parameter evtl. anpasssen:	
 const long penalty = 3000;			// Zeitstrafe bei Fehlstart (ms) 
@@ -270,7 +271,7 @@ void startingSignal(){
 	// Anzeige: Bereit?, Bestaetigen mit taste1
 	// 5 Sekunden Countdown auf Display, Ton (buzzer)
 	// s.a. https://electric-junkie.de/2020/08/arduino-millis-anstatt-von-delay/
-	
+	showEndergebnis = false;	
 	readoutLanes();
 	// very first LED.
 	delay(1000);
@@ -554,6 +555,31 @@ void setup() {
   digitalWrite(rel_B, HIGH);
 } // void setup
 
+void endResult(){
+	double t_A, t_B;
+	lcd.clear();
+	if (runde_A > runde_B) {
+		showDisplay(0,0," **A**          B   ");
+	} else 
+	if (runde_A < runde_B) {
+		showDisplay(0,0,"   A          **B** ");
+	} else if (runde_A == runde_B) showDisplay(0,0,"   A            B   ");
+	showDisplay(1,0,"      Runden        ");
+	showDisplay(2,0,"      best Z.       ");
+	showDisplay(3,0,"      best R.       ");
+	showDisplay(1,0,(String)(runde_A-1));
+	showDisplay(1,14,(String)(runde_B-1));
+	t_A = (double)besteZeit_A;
+	t_B = (double)besteZeit_B;
+	lcd.setCursor(0,2);
+	lcd.print(t_A,2);
+	lcd.setCursor(14,2);
+	lcd.print(t_B);
+	showDisplay(3,0,(String)besteRunde_A);
+	showDisplay(3,14,(String)besteRunde_B);
+	showEndergebnis = true;
+}
+
 void loop() {
 	// put your main code here, to run repeatedly:
 	settingsSwitch=digitalRead(set_race);
@@ -609,6 +635,7 @@ void loop() {
 			//Serial.print(aktuelleRenndauer); Serial.print(" ---  "); Serial.println(r);
 			if ( !rennModusZeit && ((runde_A > rundenAnzahl) || (runde_B > rundenAnzahl)) ) {
 				// Race ENDE
+				if (!showEndergebnis) endResult(); 
 				runde_A = 1;
 				runde_B = 0;
 				besteRunde_A = 0;
@@ -618,7 +645,6 @@ void loop() {
 				raceOn = false;
 				digitalWrite(rel_A, LOW); 
 				digitalWrite(rel_B, LOW);
-				showDisplay(3,9,"E");
 				btn4.update();
 				while (!btn4.rose()) {
 					btn4.update();
@@ -626,6 +652,7 @@ void loop() {
 			}
 			if ( rennModusZeit && (aktuelleRenndauer > r) ) {
 				// Race ENDE
+				if (!showEndergebnis) endResult();				
 				runde_A = 0;
 				runde_B = 0;
 				besteRunde_A = 0;
@@ -635,7 +662,6 @@ void loop() {
 				raceOn = false; 
 				digitalWrite(rel_A, LOW); 
 				digitalWrite(rel_B, LOW);
-				showDisplay(3,9,"E");
 				btn4.update();
 				while (!btn4.rose()) {
 					btn4.update();
