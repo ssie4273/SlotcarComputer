@@ -47,7 +47,7 @@ const int IR_B = 0; // Bahn B
 
 // Schalter: Race -- Set
 boolean settingsSwitch = false;
-boolean raceOn = true; // Rennen laeuft.
+boolean raceOn = false; // Rennen laeuft.
 
 // Parameter evtl. anpasssen:	
 const long penalty = 3000;			// Zeitstrafe bei Fehlstart (ms) 
@@ -98,7 +98,7 @@ unsigned long startTime_B = 0;
 float lapTime_B, besteZeit_B;
 
 // Rennparameter default:
-int rundenAnzahl = 10;
+int rundenAnzahl = 5;
 int rennDauer = 5; // in Minuten
 const int deltarennDauer = 1; 
 const int deltarundenAnzahl = 5;
@@ -142,8 +142,8 @@ void readoutLanes(){
 		
 	diff_A = abs(analog_A - averageA);
   diff_B = abs(analog_B - averageB);
-	if (diff_A < schwellwert_A) crossingIR_A = false; else crossingIR_A = true; // false setzt es auf jeden Fall zurueck	
-  if (diff_B < schwellwert_B) crossingIR_B = false; else crossingIR_B = true;
+	if (diff_A < schwellwert_A) crossingIR_A = false; else if (!crossingIR_A) { crossingIR_A = true; Serial.println("crossingIR_A = true");}// false setzt es auf jeden Fall zurueck	
+  if (diff_B < schwellwert_B) crossingIR_B = false; else if (!crossingIR_A) { crossingIR_B = true; Serial.println("crossingIR_A = true");}
 }
 
 void showDisplay(int zeile, int spalte, String text) {
@@ -291,8 +291,8 @@ void startingSignal(){
 		delay(blink);
 	// now start the signal:	
 	i = 0;	
-	runde_A = 0;
-	runde_B = 0;
+	//runde_A = 0;
+	//runde_B = 0;
 	while (i < 6) {
 		int index = i + offset;
 		// Serial.print(index); Serial.print("  "); Serial.println(Port_A[index],BIN);
@@ -318,7 +318,7 @@ void raceLoop() {
 					besteZeit_A = lapTime_A;
 					besteRunde_A = runde_A;
 				}
-				//Serial.print("A: "); Serial.print("Runde: ");Serial.print(runde_A);Serial.print("  Zeit: ");Serial.println(lapTime_A,3);
+				Serial.print("A: "); Serial.print("Runde: ");Serial.print(runde_A);Serial.print("  Zeit: ");Serial.println(lapTime_A,3);
 				//Serial.print("A:  best: ");Serial.print(besteRunde_A);Serial.print("  Zeit: ");Serial.println(besteZeit_A,3);
 				//Serial.println();
 				showDisplay(1,0,"          ");
@@ -353,7 +353,7 @@ void raceLoop() {
 					besteZeit_B = lapTime_B;
 					besteRunde_B = runde_B;
 				}
-				//Serial.print("B: "); Serial.print("Runde: ");Serial.print(runde_B);Serial.print("  Zeit: ");Serial.println(lapTime_B,3);
+				Serial.print("B: "); Serial.print("Runde: ");Serial.print(runde_B);Serial.print("  Zeit: ");Serial.println(lapTime_B,3);
 				//Serial.print("B:  best: ");Serial.print(besteRunde_B);Serial.print("  Zeit: ");Serial.println(besteZeit_B,3);
 				//Serial.println();
 				showDisplay(1,11,"          ");
@@ -576,17 +576,19 @@ void loop() {
 		digitalWrite(rel_A, HIGH); 
 		digitalWrite(rel_B, HIGH);
 		if (!raceOn) { // alle Startparameter wieder auf Anfangswerte setzen:
-			besteRunde_A = 0;
-			besteRunde_B = 0;
-			besteZeit_A = 10000000.0;
-			besteZeit_B = 10000000.0;
-			startingSignal(); 	
-			startTimeRace = millis(); // Zeitstempel: Start des Rennens 
-			startTime_A = startTimeRace;
-			startTime_B = startTimeRace;
+//			besteRunde_A = 0;
+//			besteRunde_B = 0;
+//			besteZeit_A = 10000000.0;
+//			besteZeit_B = 10000000.0;
+				startingSignal(); 	
+				startTimeRace = millis(); // Zeitstempel: Start des Rennens 
+				startTime_A = startTimeRace;
+				startTime_B = startTimeRace;
+				Serial.println("Start des Rennens");
 		}
 		while ((!settingsSwitch && raceOn)) {
 			// Fehlstartstrafe wieder freischalten:
+			raceLoop();
 			if ((fehlstart_A || fehlstart_B) && (millis()-startTimeRace > penalty)) {
 				digitalWrite(rel_A,HIGH);
 				digitalWrite(rel_B,HIGH);
@@ -601,13 +603,18 @@ void loop() {
 				writeRegister(MCP_GPIOA,0);
 				writeRegister(MCP_GPIOB,0);
 			}; 
-			raceLoop();
 			// Abbruch pruefen
 			float aktuelleRenndauer = float(millis()-startTimeRace)/1000;
 			float r = float(rennDauer)*60;
 			//Serial.print(aktuelleRenndauer); Serial.print(" ---  "); Serial.println(r);
 			if ( !rennModusZeit && ((runde_A > rundenAnzahl) || (runde_B > rundenAnzahl)) ) {
 				// Race ENDE
+				runde_A = 1;
+				runde_B = 0;
+				besteRunde_A = 0;
+				besteRunde_B = 0;
+				besteZeit_A = 10000000.0;
+				besteZeit_B = 10000000.0;
 				raceOn = false;
 				digitalWrite(rel_A, LOW); 
 				digitalWrite(rel_B, LOW);
@@ -619,6 +626,12 @@ void loop() {
 			}
 			if ( rennModusZeit && (aktuelleRenndauer > r) ) {
 				// Race ENDE
+				runde_A = 0;
+				runde_B = 0;
+				besteRunde_A = 0;
+				besteRunde_B = 0;
+				besteZeit_A = 10000000.0;
+				besteZeit_B = 10000000.0;
 				raceOn = false; 
 				digitalWrite(rel_A, LOW); 
 				digitalWrite(rel_B, LOW);
