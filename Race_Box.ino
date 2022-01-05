@@ -256,7 +256,7 @@ void startingSignal(){
 		0b00000001,0b00000101,0b00010101,0b01010101,0b01010101,0b00000000,
 		0b00000010,0b00000110,0b00010110,0b01010110,0b01010110,0b00000010,
 		0b00000001,0b00000101,0b00010101,0b01010101,0b01010101,0b00000000,
-		0b10101010,0b10101010,0b10101010,0b10101010,0b10101010,0b10101010
+		0b00000010,0b00000010,0b00000010,0b00000010,0b00000010,0b00000010
 	};
 	uint8_t Port_B[24] = {
 		0b00000000,0b00000000,0b00000000,0b00000000,0b00000001,0b00000000,
@@ -298,9 +298,9 @@ void startingSignal(){
 		int index = i + offset;
 		// Serial.print(index); Serial.print("  "); Serial.println(Port_A[index],BIN);
 		// Serial.print(index); Serial.print("  "); Serial.println(Port_B[index],BIN);
-		startTone(tone_frequency[i],(unsigned long)tone_duration[i],offset,Port_A[index],Port_B[index]);
 		writeRegister(MCP_GPIOA, Port_A[index]);
 		writeRegister(MCP_GPIOB, Port_B[index]);
+		startTone(tone_frequency[i],(unsigned long)tone_duration[i],offset,Port_A[index],Port_B[index]);
 		i++;
 	};
 raceOn = true;
@@ -518,7 +518,7 @@ void setup() {
 	int portA,portB;
 	//Lauflicht gruen von links nach rechts:
 	for (int i=1; i <= 5; i++) {
-		portA = b&lm;
+		portA = b & lm;
 		portB = (b & hm) >> 8;
 		writeRegister(MCP_GPIOA,portA);
 		writeRegister(MCP_GPIOB,portB);
@@ -567,16 +567,31 @@ void endResult(){
 	showDisplay(1,0,"      Runden        ");
 	showDisplay(2,0,"      best Z.       ");
 	showDisplay(3,0,"      best R.       ");
-	showDisplay(1,0,(String)(runde_A-1));
-	showDisplay(1,14,(String)(runde_B-1));
 	t_A = (double)besteZeit_A;
 	t_B = (double)besteZeit_B;
-	lcd.setCursor(0,2);
-	lcd.print(t_A,2);
-	lcd.setCursor(14,2);
-	lcd.print(t_B);
-	showDisplay(3,0,(String)besteRunde_A);
-	showDisplay(3,14,(String)besteRunde_B);
+	if (besteRunde_A > 0) {
+		showDisplay(1,0,(String)(runde_A-1));
+		showDisplay(3,0,(String)besteRunde_A);
+		lcd.setCursor(0,2);
+		lcd.print(t_A,2);
+	} else {
+		showDisplay(1,2,"-"); 
+		showDisplay(3,2,"-");
+		lcd.setCursor(2,2);
+		lcd.print("-");
+	}
+	if (besteRunde_B > 0) {
+		showDisplay(1,14,(String)(runde_B-1));
+		showDisplay(3,14,(String)besteRunde_B);
+		lcd.setCursor(14,2);
+		lcd.print(t_B,2);
+	} 
+	else {
+		showDisplay(1,16,"-");
+		showDisplay(3,16,"-");
+		lcd.setCursor(16,2);
+		lcd.print("-");	
+	}
 	showEndergebnis = true;
 }
 
