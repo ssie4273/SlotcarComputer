@@ -559,11 +559,11 @@ void endResult(){
 	double t_A, t_B;
 	lcd.clear();
 	if (runde_A > runde_B) {
-		showDisplay(0,0," **A**          B   ");
+		showDisplay(0,0,"**A**            B  ");
 	} else 
 	if (runde_A < runde_B) {
-		showDisplay(0,0,"   A          **B** ");
-	} else if (runde_A == runde_B) showDisplay(0,0,"   A            B   ");
+		showDisplay(0,0,"  A            **B**");
+	} else if (runde_A == runde_B) showDisplay(0,0,"  A              B  ");
 	showDisplay(1,0,"      Runden        ");
 	showDisplay(2,0,"      best Z.       ");
 	showDisplay(3,0,"      best R.       ");
@@ -595,6 +595,28 @@ void endResult(){
 	showEndergebnis = true;
 }
 
+void endLed() {
+	int blink = 150;
+	int br = 0b0000000000100000;
+	int bl = 0b0000000000100000;
+	int hm = 0b1111111100000000;
+	int lm = 0b0000000011111111;
+	int portA,portB;
+	//Lauflicht 
+	for (int i = 1; i <= 4; i++) {
+		portA = ((br | bl) & lm) ^ 0b10101010;
+		portB = (((br | bl) & hm) >> 8) ^ 0b00000010;
+		writeRegister(MCP_GPIOA,portA);
+		writeRegister(MCP_GPIOB,portB);
+		br <<= 2 ; //von low nach high 
+		bl >>= 2 ; //von low nach high 
+		delay(blink);
+	}
+	br = 0b0000000000100000;
+	bl = 0b0000000000100000;
+	delay(blink);
+}
+
 void loop() {
 	// put your main code here, to run repeatedly:
 	settingsSwitch=digitalRead(set_race);
@@ -616,11 +638,7 @@ void loop() {
 		// Bahnstrom einschalten:
 		digitalWrite(rel_A, HIGH); 
 		digitalWrite(rel_B, HIGH);
-		if (!raceOn) { // alle Startparameter wieder auf Anfangswerte setzen:
-//			besteRunde_A = 0;
-//			besteRunde_B = 0;
-//			besteZeit_A = 10000000.0;
-//			besteZeit_B = 10000000.0;
+		if (!raceOn) { 
 				startingSignal(); 	
 				startTimeRace = millis(); // Zeitstempel: Start des Rennens 
 				startTime_A = startTimeRace;
@@ -650,7 +668,10 @@ void loop() {
 			//Serial.print(aktuelleRenndauer); Serial.print(" ---  "); Serial.println(r);
 			if ( !rennModusZeit && ((runde_A > rundenAnzahl) || (runde_B > rundenAnzahl)) ) {
 				// Race ENDE
-				if (!showEndergebnis) endResult(); 
+				digitalWrite(rel_A, LOW); 
+				digitalWrite(rel_B, LOW);
+				endLed(); // Lightshow..
+				if (!showEndergebnis) endResult(); //Endergebnis nur einmal anzeigen. Vermeidet Flackern auf LCD
 				runde_A = 1;
 				runde_B = 0;
 				besteRunde_A = 0;
@@ -658,8 +679,6 @@ void loop() {
 				besteZeit_A = 10000000.0;
 				besteZeit_B = 10000000.0;
 				raceOn = false;
-				digitalWrite(rel_A, LOW); 
-				digitalWrite(rel_B, LOW);
 				btn4.update();
 				while (!btn4.rose()) {
 					btn4.update();
@@ -667,7 +686,10 @@ void loop() {
 			}
 			if ( rennModusZeit && (aktuelleRenndauer > r) ) {
 				// Race ENDE
-				if (!showEndergebnis) endResult();				
+				digitalWrite(rel_A, LOW); 
+				digitalWrite(rel_B, LOW);
+				endLed(); // Lightshow..
+				if (!showEndergebnis) endResult();//Endergebnis nur einmal anzeigen. Vermeidet Flackern auf LCD
 				runde_A = 0;
 				runde_B = 0;
 				besteRunde_A = 0;
@@ -675,8 +697,6 @@ void loop() {
 				besteZeit_A = 10000000.0;
 				besteZeit_B = 10000000.0;
 				raceOn = false; 
-				digitalWrite(rel_A, LOW); 
-				digitalWrite(rel_B, LOW);
 				btn4.update();
 				while (!btn4.rose()) {
 					btn4.update();
