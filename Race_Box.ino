@@ -54,13 +54,13 @@ boolean showEndergebnis = false;
 const long penalty = 3000;			// Zeitstrafe bei Fehlstart (ms) 
 unsigned long previousRaceDuration = 0;
 unsigned long startTimeRace;	// Zeitstempel: Start des Rennens
-const int schwellwert_A = 20; // IR Empfindlichkeit Bahn A
+const int schwellwert_A = 30; // IR Empfindlichkeit Bahn A
 const int schwellwert_B = 50; // IR Empfindlichkeit Bahn B
 const int IR_sensor_speed = 5;// IR Brücke wird alle IR_sensor_speed ms ausgelesen
 const int IR_off_cycle = 350; // IR Brücke wird für IR_out_cycle * IR_sensor_speed nicht ausgelesen: nur Spitze des Fahrzeugs wird gewertet.
 const int gesamt = 1000;		// Signalabstand der LED Startampel (ms)
 const int tone_short = 50;
-const int tone_long = 300;
+const int tone_long = 100;
 
 // nicht anpassen:
 int analog_A; // ausgelesener Wert Lichtschranke Bahn1
@@ -294,7 +294,7 @@ void startingSignal(){
 	i = 0;	
 	//runde_A = 0;
 	//runde_B = 0;
-	while (i < 6) {
+	while (i < 5) {
 		int index = i + offset;
 		// Serial.print(index); Serial.print("  "); Serial.println(Port_A[index],BIN);
 		// Serial.print(index); Serial.print("  "); Serial.println(Port_B[index],BIN);
@@ -303,7 +303,6 @@ void startingSignal(){
 		startTone(tone_frequency[i],(unsigned long)tone_duration[i],offset,Port_A[index],Port_B[index]);
 		i++;
 	};
-raceOn = true;
 }
  
 void raceLoop() {
@@ -319,7 +318,7 @@ void raceLoop() {
 					besteZeit_A = lapTime_A;
 					besteRunde_A = runde_A;
 				}
-				Serial.print("A: "); Serial.print("Runde: ");Serial.print(runde_A);Serial.print("  Zeit: ");Serial.println(lapTime_A,3);
+				//Serial.print("A: "); Serial.print("Runde: ");Serial.print(runde_A);Serial.print("  Zeit: ");Serial.println(lapTime_A,3);
 				//Serial.print("A:  best: ");Serial.print(besteRunde_A);Serial.print("  Zeit: ");Serial.println(besteZeit_A,3);
 				//Serial.println();
 				showDisplay(1,0,"          ");
@@ -640,10 +639,15 @@ void loop() {
 		digitalWrite(rel_B, HIGH);
 		if (!raceOn) { 
 				startingSignal(); 	
+				tone(buzzer,2000);
+				delay(tone_long);
+				noTone(buzzer);
 				startTimeRace = millis(); // Zeitstempel: Start des Rennens 
 				startTime_A = startTimeRace;
 				startTime_B = startTimeRace;
-				Serial.println("Start des Rennens");
+				writeRegister(MCP_GPIOA,0);
+				writeRegister(MCP_GPIOB,0);
+				raceOn = true;
 		}
 		while ((!settingsSwitch && raceOn)) {
 			// Fehlstartstrafe wieder freischalten:
