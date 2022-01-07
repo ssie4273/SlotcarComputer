@@ -57,7 +57,7 @@ unsigned long startTimeRace;	// Zeitstempel: Start des Rennens
 const int schwellwert_A = 30; // IR Empfindlichkeit Bahn A
 const int schwellwert_B = 50; // IR Empfindlichkeit Bahn B
 const int IR_sensor_speed = 5;// IR Brücke wird alle IR_sensor_speed ms ausgelesen
-const int IR_off_cycle = 350; // IR Brücke wird für IR_out_cycle * IR_sensor_speed nicht ausgelesen: nur Spitze des Fahrzeugs wird gewertet.
+const int IR_off_cycle = 700; // IR Brücke wird für IR_out_cycle * IR_sensor_speed nicht ausgelesen: nur Spitze des Fahrzeugs wird gewertet.
 const int gesamt = 1000;		// Signalabstand der LED Startampel (ms)
 const int tone_short = 50;
 const int tone_long = 100;
