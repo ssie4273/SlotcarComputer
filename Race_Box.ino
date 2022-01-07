@@ -626,11 +626,11 @@ void loop() {
 		offset=0; // LED: normale Startsequenz
 		lcd.clear();	
 		if (rennModusZeit) {
-			showDisplay(0,1,"Zeit: ");
+			showDisplay(0,1,"Zeit:               ");
 			showDisplay(0,7,(String)rennDauer);
 			showDisplay(0,10,"Min.");
 		} else {
-			showDisplay(0,1,"Runden: ");
+			showDisplay(0,1,"Runden:             ");
 			showDisplay(0,9,(String)rundenAnzahl);
 			showDisplay(0,12,"R.");
 		}
@@ -666,10 +666,39 @@ void loop() {
 				writeRegister(MCP_GPIOA,0);
 				writeRegister(MCP_GPIOB,0);
 			}; 
-			// Abbruch pruefen
-			float aktuelleRenndauer = float(millis()-startTimeRace)/1000;
+			// Abbruch pruefen, Renndauer Zeit anzeigen
+			unsigned long aktuelleRenndauer = (millis()-startTimeRace)/1000;
+			unsigned long aktuelleRenndauerSek = aktuelleRenndauer;
+			unsigned long aktuelleRenndauerMin = aktuelleRenndauerSek/60;
+			unsigned long previousSek;
 			float r = float(rennDauer)*60;
-			//Serial.print(aktuelleRenndauer); Serial.print(" ---  "); Serial.println(r);
+			if (aktuelleRenndauerSek != previousSek) {
+				previousSek = aktuelleRenndauerSek;
+				aktuelleRenndauerSek %= 60;
+				aktuelleRenndauerMin %= 60;
+				showDisplay(0,17,":");
+				// Gehampel, weil es kein sprintf gibt....
+				if (aktuelleRenndauerMin < 10) {
+					lcd.setCursor(15,0);
+					lcd.print("0");
+					lcd.setCursor(16,0);
+					lcd.print(aktuelleRenndauerMin);
+				} else {
+					lcd.setCursor(15,0);
+					lcd.print(aktuelleRenndauerMin);
+				}
+				
+				if (aktuelleRenndauerSek < 10) {
+					lcd.setCursor(18,0);
+					lcd.print("0");
+					lcd.setCursor(19,0);
+					lcd.print(aktuelleRenndauerSek);
+				} else {
+					lcd.setCursor(18,0);
+					lcd.print(aktuelleRenndauerSek);
+				}
+			}
+			
 			if ( !rennModusZeit && ((runde_A > rundenAnzahl) || (runde_B > rundenAnzahl)) ) {
 				// Race ENDE
 				digitalWrite(rel_A, LOW); 
@@ -688,7 +717,7 @@ void loop() {
 					btn4.update();
 				}
 			}
-			if ( rennModusZeit && (aktuelleRenndauer > r) ) {
+			if ( rennModusZeit && ((float)aktuelleRenndauer > r) ) {
 				// Race ENDE
 				digitalWrite(rel_A, LOW); 
 				digitalWrite(rel_B, LOW);
