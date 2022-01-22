@@ -99,6 +99,7 @@ unsigned long startTime_B = 0;
 float lapTime_B, besteZeit_B;
 const float minLapTime = 2.5;
 const float raceTrackLength = 6.99; 
+int scalefactor = 32;
 float vel_A, vel_B;
 boolean showVelocity_A = false;
 boolean showVelocity_B = false;
@@ -340,7 +341,7 @@ void raceLoop() {
 				showDisplay(1,0,(String)runde_A);
 				double t = (double)lapTime_A;
 				lcd.setCursor(4,1);
-				lcd.print(t,2);
+				if (showVelocity_A) lcd.print((int)vel_A*scalefactor); else lcd.print(t,2);
 				showDisplay(2,0,"--- beste Runde: ---");
 				showDisplay(3,0,"          ");
 				showDisplay(3,0,(String)besteRunde_A);
@@ -377,7 +378,7 @@ void raceLoop() {
 				showDisplay(1,11,(String)runde_B);
 				double t = (double)lapTime_B;
 				lcd.setCursor(15,1);
-				lcd.print(t,2);
+				if (showVelocity_B) lcd.print((int)vel_B*scalefactor); else lcd.print(t,2);
 				showDisplay(2,0,"--- beste Runde: ---");
 				showDisplay(3,11,"          ");
 				showDisplay(3,11,(String)besteRunde_B);
