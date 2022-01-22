@@ -97,9 +97,14 @@ int besteRunde_B = 0;
 unsigned long myTime_B;
 unsigned long startTime_B = 0;
 float lapTime_B, besteZeit_B;
+const float minLapTime = 2.5;
+const float raceTrackLength = 6.99; 
+float vel_A, vel_B;
+boolean showVelocity_A = false;
+boolean showVelocity_B = false;
 
 // Rennparameter default:
-int rundenAnzahl = 5;
+int rundenAnzahl = 10;
 int rennDauer = 5; // in Minuten
 const int deltarennDauer = 1; 
 const int deltarundenAnzahl = 5;
@@ -107,6 +112,7 @@ const int maxrennDauer = 15;
 const int minrennDauer = 2;
 const int maxrundenAnzahl = 100;
 const int minrundenAnzahl = 5;
+
 // Rennmodus true: Zeitrennen, false: Rundenrennen
 boolean rennModusZeit = false; // true: Zeitrennen, false: Rundenrunnen
 
@@ -143,8 +149,8 @@ void readoutLanes(){
 		
 	diff_A = abs(analog_A - averageA);
   diff_B = abs(analog_B - averageB);
-	if (diff_A < schwellwert_A) crossingIR_A = false; else if (!crossingIR_A) { crossingIR_A = true; Serial.println("crossingIR_A = true");}// false setzt es auf jeden Fall zurueck	
-  if (diff_B < schwellwert_B) crossingIR_B = false; else if (!crossingIR_A) { crossingIR_B = true; Serial.println("crossingIR_A = true");}
+	if (diff_A < schwellwert_A) crossingIR_A = false; else if (!crossingIR_A) { crossingIR_A = true;} //Serial.println("crossingIR_A = true");}// false setzt es auf jeden Fall zurueck	
+  if (diff_B < schwellwert_B) crossingIR_B = false; else if (!crossingIR_A) { crossingIR_B = true;} //Serial.println("crossingIR_A = true");}
 }
 
 void showDisplay(int zeile, int spalte, String text) {
@@ -308,13 +314,22 @@ void startingSignal(){
 void raceLoop() {
   // aktives Rennen
 	readoutLanes(); // IR Bruecken lesen
-  if (crossingIR_A) {
+	
+	// Umscahlten zwischen Zeit und Geschwindigkeitsanzeige: 
+	btn1.update();
+	btn4.update();
+  if (btn1.rose()) showVelocity_A = !showVelocity_A;
+  if (btn4.rose()) showVelocity_B = !showVelocity_B;
+	
+	if (crossingIR_A) {
     //Auto A durchfährt Lichtschranke
     if (n_A == IR_off_cycle) { // nur beim allererstem Signal triggern, danach stummschalten fuer IR_offcycle*IR_sensor_speed
 			if (runde_A > 0) {
 			  myTime_A = millis();
 				lapTime_A = float(myTime_A - startTime_A) / 1000;
-				if (lapTime_A < besteZeit_A && runde_A > 0) {
+				vel_A = (raceTrackLength/lapTime_A)*3.6;
+				//Serial.print("vel_A: ");Serial.print(vel_A);Serial.print("  real: ");Serial.println(vel_A*32.0);
+				if (lapTime_A > minLapTime && lapTime_A < besteZeit_A && runde_A > 0) {
 					besteZeit_A = lapTime_A;
 					besteRunde_A = runde_A;
 				}
@@ -349,11 +364,13 @@ void raceLoop() {
       if (runde_B > 0) {
 				myTime_B = millis();
 				lapTime_B = float(myTime_B - startTime_B) / 1000;
-				if (lapTime_B < besteZeit_B && runde_B > 0) {
+				vel_B = (raceTrackLength/lapTime_B)*3.6;
+				//Serial.print("vel_B: ");Serial.print(vel_B);Serial.print("  real: ");Serial.println(vel_B*32.0);
+				if (lapTime_B > minLapTime && lapTime_B < besteZeit_B && runde_B > 0) {
 					besteZeit_B = lapTime_B;
 					besteRunde_B = runde_B;
 				}
-				Serial.print("B: "); Serial.print("Runde: ");Serial.print(runde_B);Serial.print("  Zeit: ");Serial.println(lapTime_B,3);
+				//Serial.print("B: "); Serial.print("Runde: ");Serial.print(runde_B);Serial.print("  Zeit: ");Serial.println(lapTime_B,3);
 				//Serial.print("B:  best: ");Serial.print(besteRunde_B);Serial.print("  Zeit: ");Serial.println(besteZeit_B,3);
 				//Serial.println();
 				showDisplay(1,11,"          ");
