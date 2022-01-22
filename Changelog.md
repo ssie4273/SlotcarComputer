@@ -1,0 +1,34 @@
+- small fix in Serial printout
+- remove of unnecessary reasoutLanes().
+- infinite raceLoop() with output on Serial.print IR value is averaged over ten readings. ready for first pre-releae version!
+- Update README.md
+- MERGE: Smoothing merged from testtools
+- Smoothing of IR bridge values.
+- small changes. cleanup stashed garbage...
+- small changes
+- .
+- mapped analogreads
+- readoutLanes() in setup(): resetting diffMax_A to 0
+- debug: display IR value and diff
+- using global variable for IR diff
+- Testmode...
+- display IR diffs
+- different thresholds for lane A and B
+- cleanup Serial.print logging
+- some logging removed
+- react on pressign button (not releasing)
+- small bug fix
+- Debouncing pushbuttons with library Bounce2: Fixing issues:  not able to go back page 1 on settings: new #4  Pushbuttons not debounced #1
+- ignoring .metadata directory define settings when switch si set to "settings" set_race (Pin 7)
+- settings as separate function
+- Settings can be edited. NEED FIX: debounce of pushbuttons does not work very well. Currently workaround with simple delay(50)
+- Settings screen on separate branch
+- small fix
+- Erster Entwurf der Einstellungen.
+- more ignores
+- Arduino build Verzeichnisse ignorieren
+- Checkinto Git.
+- Update README.md
+- Add files via upload
+- Update README.md
+- Initial commit
