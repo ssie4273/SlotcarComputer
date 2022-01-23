@@ -1,3 +1,5 @@
+# Changelog
+
 Version 2.0.0
 =============
 - btn1 and btn4 switch between laptime and scaled velocity.
