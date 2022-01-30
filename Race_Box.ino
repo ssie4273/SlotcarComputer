@@ -57,7 +57,7 @@ unsigned long startTimeRace;	// Zeitstempel: Start des Rennens
 const int schwellwert_A = 30; // IR Empfindlichkeit Bahn A
 const int schwellwert_B = 50; // IR Empfindlichkeit Bahn B
 const int IR_sensor_speed = 5;// IR Brücke wird alle IR_sensor_speed ms ausgelesen
-const int IR_off_cycle = 700; // IR Brücke wird für IR_out_cycle * IR_sensor_speed nicht ausgelesen: nur Spitze des Fahrzeugs wird gewertet.
+const int IR_off_cycle = 350; // IR Brücke wird für IR_out_cycle * IR_sensor_speed nicht ausgelesen: nur Spitze des Fahrzeugs wird gewertet.
 const int gesamt = 1000;		// Signalabstand der LED Startampel (ms)
 const int tone_short = 50;
 const int tone_long = 100;
@@ -326,6 +326,7 @@ void raceLoop() {
     //Auto A durchfährt Lichtschranke
     if (n_A == IR_off_cycle) { // nur beim allererstem Signal triggern, danach stummschalten fuer IR_offcycle*IR_sensor_speed
 			if (runde_A > 0) {
+				//writeRegister(MCP_GPIOA,0b00000100); // bei Durchfahrt LED anmachen
 			  myTime_A = millis();
 				lapTime_A = float(myTime_A - startTime_A) / 1000;
 				vel_A = (raceTrackLength/lapTime_A)*3.6;
@@ -363,6 +364,7 @@ void raceLoop() {
     // Auto B durchfährt Lichtschranke
     if (n_B == IR_off_cycle) { // nur beim allererstem Signal triggern, danach stummschalten fuer IR_offcycle*IR_sensor_speed
       if (runde_B > 0) {
+				//writeRegister(MCP_GPIOA,0b01000000); // bei Durchfahrt LED anmachen 
 				myTime_B = millis();
 				lapTime_B = float(myTime_B - startTime_B) / 1000;
 				vel_B = (raceTrackLength/lapTime_B)*3.6;
@@ -399,9 +401,25 @@ void raceLoop() {
 
   // IR Brücke evtl. zurücksetzen und IR Messung für Vergleich speichern
   if (n_A < IR_off_cycle) n_A--;
-  if (n_A == 0) n_A = IR_off_cycle;
+  if (n_A == 0 && runde_A > 0) {	
+		n_A = IR_off_cycle; 
+		writeRegister(MCP_GPIOA,0);
+	};
   if (n_B < IR_off_cycle) n_B--;
-  if (n_B == 0) n_B = IR_off_cycle;
+  if (n_B == 0 && runde_B > 0) {
+		n_B = IR_off_cycle;
+		writeRegister(MCP_GPIOA,0);
+	};
+	// Fuehrendes Fahrzeug kriegt aussen LED auf gruen:
+	if (runde_A > runde_B) {
+		// Bahn A liegt vorn. linke LED an
+		writeRegister(MCP_GPIOA,0b00000001);
+		writeRegister(MCP_GPIOB,0);
+	} else if (runde_B > runde_A) {
+		// Bahn B liegt vorn. rechte LED an.
+		writeRegister(MCP_GPIOB,0b00000001);
+		writeRegister(MCP_GPIOA,0);
+	}; 
   // IR Sensoren erneut auslesen.
   delay(IR_sensor_speed);
 } // end of raceLoop
