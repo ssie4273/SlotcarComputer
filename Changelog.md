@@ -1,4 +1,6 @@
 # Changelog
+## Version 2.1.0
+- green LED left or right on starting light indicating leading car.
 
 ## Version 2.0.0
 - btn1 and btn4 switch between laptime and scaled velocity.
